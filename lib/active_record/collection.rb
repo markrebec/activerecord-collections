@@ -10,7 +10,7 @@ module ActiveRecord
       end
       
       def respond_to_missing?(meth, include_private=false)
-        new.respond_to?(meth) || super
+        new.respond_to?(meth, include_private) || super
       end
 
       def select(*args)
@@ -61,38 +61,16 @@ module ActiveRecord
 
       def from_hash(hash)
         hash.symbolize_keys!
-        set = new
-        set.select!(*hash[:select]) unless hash[:select].empty?
-        set.distinct! if hash[:distinct] == true
-        set.joins!(*hash[:joins]) unless hash[:joins].empty?
-        set.references!(*hash[:references]) unless hash[:references].empty?
-        set.includes!(*hash[:includes]) unless hash[:includes].empty?
-        set.where!(*hash[:bind].map { |b| b[:value] }.unshift(hash[:where].join(" AND ").gsub(/\$\d/,'?'))) unless hash[:where].empty?
-        set.order!(hash[:order]) unless hash[:order].empty?
-        set
+        collection = new
+        collection.select!(*hash[:select]) unless hash[:select].empty?
+        collection.distinct! if hash[:distinct] == true
+        collection.joins!(*hash[:joins]) unless hash[:joins].empty?
+        collection.references!(*hash[:references]) unless hash[:references].empty?
+        collection.includes!(*hash[:includes]) unless hash[:includes].empty?
+        collection.where!(*hash[:bind].map { |b| b[:value] }.unshift(hash[:where].join(" AND ").gsub(/\$\d/,'?'))) unless hash[:where].empty?
+        collection.order!(hash[:order]) unless hash[:order].empty?
+        collection
       end
-    end
-
-    def on_relation(&block)
-      set = dup
-      set.instance_eval do
-        def self.method_missing(meth, *args)
-          return call_on_relation(meth, *args)
-        end
-      end
-      return set.instance_eval(&block) if block_given?
-      set
-    end
-
-    def on_results(&block)
-      set = dup
-      set.instance_eval do
-        def self.method_missing(meth, *args)
-          return call_on_results(meth, *args)
-        end
-      end
-      return set.instance_eval(&block) if block_given?
-      set
     end
 
     def method_missing(meth, *args)
@@ -100,7 +78,7 @@ module ActiveRecord
         return call_on_relation(meth, *args)
       end
 
-      if model.public_instance_methods.include?(meth) || (!results.nil? && results.loaded? && results.first.respond_to?(meth))
+      if results_respond_to?(meth)
         return call_on_results(meth, *args)
       end
 
@@ -108,10 +86,37 @@ module ActiveRecord
     end
 
     def respond_to_missing?(meth, include_private=false)
-      model.public_instance_methods.include?(meth) ||
-      (!results.nil? && results.loaded? && results.first.respond_to?(meth)) ||
-      relation.respond_to?(meth) ||
+      results_respond_to?(meth, include_private) ||
+      relation.respond_to?(meth, include_private) ||
       super
+    end
+
+    def on_relation(&block)
+      collection = dup
+      collection.instance_eval do
+        def self.method_missing(meth, *args)
+          call_on_relation(meth, *args)
+        end
+        def self.respond_to_missing?(meth, include_private=false)
+          relation.respond_to?(meth, include_private)
+        end
+      end
+      return collection.instance_eval(&block) if block_given?
+      collection
+    end
+
+    def on_results(&block)
+      collection = dup
+      collection.instance_eval do
+        def self.method_missing(meth, *args)
+          call_on_results(meth, *args)
+        end
+        def self.respond_to_missing?(meth, include_private=false)
+          results_respond_to?(meth, include_private)
+        end
+      end
+      return collection.instance_eval(&block) if block_given?
+      collection
     end
 
     def results
@@ -161,7 +166,7 @@ module ActiveRecord
     end
 
     def all
-      dup.reset.limit!(nil)
+      reset.limit!(nil)
     end
 
     def each(&block)
@@ -273,10 +278,8 @@ module ActiveRecord
     end
 
     def select!(*args)
-      @results = nil
-      @result_ids = nil
-      @total_count = nil
-      @relation = relation.reset.select(*args)
+      reset!
+      @relation = relation.select(*args)
       self
     end
 
@@ -285,10 +288,8 @@ module ActiveRecord
     end
 
     def distinct!(bool=true)
-      @results = nil
-      @result_ids = nil
-      @total_count = nil
-      @relation = relation.reset.distinct(bool)
+      reset!
+      @relation = relation.distinct(bool)
       self
     end
 
@@ -297,10 +298,8 @@ module ActiveRecord
     end
 
     def where!(*args, &block)
-      @results = nil
-      @result_ids = nil
-      @total_count = nil
-      relation.reset.where!(*args, &block)
+      reset!
+      relation.where!(*args, &block)
       self
     end
 
@@ -309,7 +308,8 @@ module ActiveRecord
     end
 
     def not!(*args, &block)
-      @relation = relation.reset.where.not(*args, &block)
+      reset!
+      @relation = relation.where.not(*args, &block)
       self
     end
 
@@ -318,7 +318,8 @@ module ActiveRecord
     end
 
     def or!(*args, &block)
-      @relation = relation.reset.or.where(*args, &block)
+      reset!
+      @relation = relation.or.where(*args, &block)
       self
     end
 
@@ -327,9 +328,8 @@ module ActiveRecord
     end
 
     def order!(*args, &block)
-      @results = nil
-      @result_ids = nil
-      relation.reset.order!(*args, &block)
+      reset!(false)
+      relation.order!(*args, &block)
       self
     end
 
@@ -338,9 +338,8 @@ module ActiveRecord
     end
 
     def limit!(*args, &block)
-      @results = nil
-      @result_ids = nil
-      relation.reset.limit!(*args, &block)
+      reset!
+      relation.limit!(*args, &block)
       self
     end
 
@@ -350,8 +349,7 @@ module ActiveRecord
     alias_method :batch, :page
 
     def page!(*num)
-      @results = nil
-      @result_ids = nil
+      reset!(false, false)
       @page = num[0] || 1
       @per ||= 25
       @relation = relation.page(@page).per(@per)
@@ -365,8 +363,7 @@ module ActiveRecord
     alias_method :batch_size, :per
 
     def per!(num)
-      @results = nil
-      @result_ids = nil
+      reset!(false, false)
       @page ||= 1
       @per = num
       @relation = relation.page(@page).per(@per)
@@ -379,8 +376,7 @@ module ActiveRecord
     end
 
     def joins!(*args)
-      @results = nil
-      @result_ids = nil
+      reset!
       relation.joins!(*args)
       self
     end
@@ -390,8 +386,7 @@ module ActiveRecord
     end
 
     def includes!(*args)
-      @results = nil
-      @result_ids = nil
+      reset!
       relation.includes!(*args)
       self
     end
@@ -401,8 +396,7 @@ module ActiveRecord
     end
 
     def references!(*table_names)
-      @results = nil
-      @result_ids = nil
+      reset!
       relation.references!(*table_names)
       self
     end
@@ -422,6 +416,7 @@ module ActiveRecord
     end
 
     def to_hash
+      # TODO Mark include limit/offset if they were set explicitly and we're not paginated
       {
         select:     relation.select_values,
         distinct:   relation.distinct_value,
@@ -443,8 +438,14 @@ module ActiveRecord
       to_json
     end
 
-    def reset
-      @page = @per = @results = @result_ids = @total_count = nil
+    def reset(clear_total=true, clear_pages=true)
+      dup.reset!(clear_total, clear_pages)
+    end
+
+    def reset!(clear_total=true, clear_pages=true)
+      @results = @result_ids = nil
+      @page = @per = nil if clear_pages
+      @total_count = nil if clear_total
       relation.reset
       self
     end
@@ -487,12 +488,16 @@ module ActiveRecord
       end
     end
 
+    def results_respond_to?(meth, include_private=false)
+      model.public_instance_methods.include?(meth) ||
+      (include_private && model.private_instance_methods.include?(meth)) ||
+      (!results.nil? && results.loaded? && results.first.respond_to?(meth, include_private))
+    end
+
     def call_on_relation(meth, *args)
-      @results = nil
-      @result_ids = nil
-      @total_count = nil
-      @relation = relation.reset.send(meth, *args)
-      return self
+      reset!
+      @relation = relation.send(meth, *args)
+      self
     end
   end
 end
