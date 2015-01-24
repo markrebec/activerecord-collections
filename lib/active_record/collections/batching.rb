@@ -1,6 +1,7 @@
 module ActiveRecord
   module Collections
     module Batching
+      # TODO Mark default_batch_size/threshold
       def paginated?
         !(@page.nil? && @per.nil?)
       end
