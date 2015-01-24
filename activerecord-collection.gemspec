@@ -3,7 +3,7 @@ require "active_record/collection/version"
 
 Gem::Specification.new do |s|
   s.name        = "activerecord-collection"
-  s.version     = ActiveRecord::Collection::VERSION
+  s.version     = ActiveRecord::CollectionVersion::VERSION
   s.summary     = "Create collections of records, represented by ActiveRecord::Relation query criteria."
   s.description = "Create collections of records, represented by ActiveRecord::Relation query criteria which can be serialized and passed around without executing queries or loading records."
   s.authors     = ["Mark Rebec"]

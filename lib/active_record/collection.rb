@@ -3,6 +3,16 @@ module ActiveRecord
     attr_reader :model, :relation, :options
 
     class << self
+      def method_missing(meth, *args)
+        collection = new
+        return collection.send(meth, *args) if collection.respond_to?(meth)
+        super
+      end
+      
+      def respond_to_missing?(meth, include_private=false)
+        new.respond_to?(meth) || super
+      end
+
       def select(*args)
         new.select(*args)
       end
