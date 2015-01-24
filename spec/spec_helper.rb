@@ -1,5 +1,7 @@
 require 'active_record'
-require 'active_record/collection'
+require 'activerecord-collections'
+require 'factory_girl'
+require 'faker'
 require 'rspec'
 
 Dir[File.join(File.dirname(__FILE__), '..', "spec/support/**/*.rb")].each { |f| require f }
@@ -7,8 +9,22 @@ Dir[File.join(File.dirname(__FILE__), '..', "spec/support/**/*.rb")].each { |f| 
 RSpec.configure do |config|
   config.before(:suite) do
     ActiveRecord::Base.establish_connection adapter: "sqlite3", database: ":memory:"
-    #capture_stdout { load "db/schema.rb" }
+    capture_stdout { load "db/schema.rb" }
     load 'support/models.rb'
+  end
+  
+  # Using Factory Girl instead of fixtures
+  config.include FactoryGirl::Syntax::Methods
+  # Lint your factories before running the suite to find any errors up front
+  config.before(:suite) do
+    ActiveRecord::Base.transaction do
+      begin
+        FactoryGirl.lint
+      rescue FactoryGirl::InvalidFactoryError => e
+        puts e.message
+      end
+      raise ActiveRecord::Rollback
+    end
   end
 
   # rspec-expectations config goes here. You can use an alternate
