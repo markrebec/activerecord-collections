@@ -9,6 +9,10 @@ module ActiveRecord
         @record_ids ||= records.loaded? ? records.map(&:id) : records.pluck(:id)
       end
 
+      def pluck(col)
+        relation.pluck(col)
+      end
+
       def to_a
         records.to_a
       end
