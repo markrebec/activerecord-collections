@@ -43,7 +43,7 @@ module ActiveRecord
       def page!(*num)
         reset!(false, false)
         @page = num[0] || 1
-        @per ||= 25
+        @per ||= default_batch_size
         @relation = relation.page(@page).per(@per)
         self
       end
