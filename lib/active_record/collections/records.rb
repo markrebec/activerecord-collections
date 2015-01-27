@@ -17,14 +17,19 @@ module ActiveRecord
         records.to_a
       end
 
+      def total_records
+        @total_records ||= relation.limit(nil).count
+      end
+
       def total_count
-        @total_count ||= relation.limit(nil).count
+        batch! if try(:should_batch?)
+        total_records
       end
       alias_method :total, :total_count
       alias_method :count, :total_count
 
       def size
-        relation.size
+        @size ||= relation.size
       end
 
       def length
@@ -32,11 +37,23 @@ module ActiveRecord
       end
 
       def each(&block)
-        records.each { |record| yield record if block_given? }
+        batch! if try(:should_batch?)
+
+        if try(:batched?)
+          flat_batch_map.each { |record| block_given? ? yield(record) : record }
+        else
+          records.each { |record| block_given? ? yield(record) : record }
+        end
       end
 
       def map(&block)
-        each.map { |record| yield record if block_given? }
+        batch! if try(:should_batch?)
+
+        if try(:batched?)
+          flat_batch_map.map { |record| block_given? ? yield(record) : record }
+        else
+          each.map { |record| block_given? ? yield(record) : record }
+        end
       end
 
       def flat_map(&block)

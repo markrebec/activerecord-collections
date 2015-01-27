@@ -20,6 +20,8 @@ module ActiveRecord
           collection.includes!(*hash[:includes]) unless hash[:includes].empty?
           collection.where!(*hash[:bind].map { |b| b[:value] }.unshift(hash[:where].join(" AND ").gsub(/\$\d/,'?'))) unless hash[:where].empty?
           collection.order!(hash[:order]) unless hash[:order].empty?
+          collection.limit!(hash[:limit]) unless hash[:limit].empty?
+          collection.offset!(hash[:offset]) unless hash[:offset].empty?
           collection
         end
       end
@@ -28,9 +30,8 @@ module ActiveRecord
         relation.to_sql
       end
 
-      def to_hash
-        # TODO Mark include limit/offset if they were set explicitly and we're not paginated
-        {
+      def to_hash(include_limit=false)
+        h = {
           select:     relation.select_values,
           distinct:   relation.distinct_value,
           joins:      relation.joins_values,
@@ -40,6 +41,11 @@ module ActiveRecord
           order:      relation.order_values.map { |v| v.is_a?(String) ? v : v.to_sql },
           bind:       relation.bind_values.map { |b| {name: b.first.name, value: b.last} }
         }
+        if include_limit || try(:is_batch?)
+          h[:limit] = relation.limit_value
+          h[:offset] = relation.offset_value
+        end
+        h
       end
       alias_method :to_h, :to_hash
 

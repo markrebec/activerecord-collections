@@ -153,9 +153,9 @@ module ActiveRecord
       end
 
       def reset!(clear_total=true, clear_pages=true)
-        @records = @record_ids = nil
+        @records = @record_ids = @size = nil
         @page = @per = nil if clear_pages
-        @total_count = nil if clear_total
+        @total_records = nil if clear_total
         relation.reset
         self
       end

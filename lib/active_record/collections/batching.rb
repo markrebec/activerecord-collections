@@ -16,6 +16,14 @@ module ActiveRecord
           @batching_threshold ||= 10_000
         end
 
+        def batch_by_default!
+          @batch_by_default = true
+        end
+
+        def batch_by_default?
+          @batch_by_default || false
+        end
+
         def page(*num)
           new.page(*num)
         end
@@ -34,6 +42,57 @@ module ActiveRecord
       def batching_threshold
         self.class.batching_threshold
       end
+
+      def batch_by_default?
+        self.class.batch_by_default?
+      end
+
+      def should_batch?(check_if_batched=true)
+        return false if is_batch?
+        return false if check_if_batched && batched?
+        batch_by_default? ||
+        ( batching_threshold > 0 &&
+          total_records >= batching_threshold )
+      end
+
+      def is_batch!
+        @is_batch = true
+        self
+      end
+
+      def is_batch?
+        @is_batch || false
+      end
+      alias_method :batch?, :is_batch?
+
+      def as_batch
+        dup.is_batch!
+      end
+
+      def as_next_batch
+        next_page!.as_batch
+      end
+
+      def to_batches
+        batched = dup.batch!
+        batches = []
+        while batched.next_page? do
+          batches << batched.next_page!.as_batch
+        end
+        batches
+      end
+
+      def as_batches(&block)
+        batched = dup.batch!
+        batches = []
+        while batched.next_page? do
+          b = batched.next_page!.as_batch
+          yield b if block_given?
+          batches << b
+        end
+        batches
+      end
+      alias_method :in_batches, :as_batches
 
       def page(*num)
         dup.page!(*num)
@@ -64,7 +123,13 @@ module ActiveRecord
       alias_method :batch_size!, :per!
 
       def paginated?
-        !(@page.nil? && @per.nil?)
+        return true if !(@page.nil? && @per.nil?)
+        if should_batch?(false)
+          batch!
+          true
+        else
+          false
+        end
       end
       alias_method :batched?, :paginated?
 
@@ -79,38 +144,41 @@ module ActiveRecord
       alias_method :per_batch, :per_page
 
       def total_pages
-        total_count / per_page
+        return 1 if is_batch?
+        (total_count.to_f / per_page.to_f).ceil
       end
       alias_method :total_batches, :total_pages
 
       def each_page(&block)
         if total_pages <= 1
-          yield records if block_given?
-          return [records]
+          yield to_a if block_given?
+          return [to_a]
         end
 
-        page!(1)
+        first_page!
         paged = []
-        while !records.empty? do
-          paged << records
-          yield records if block_given?
+        total_pages.times do
+          paged << to_a
+          yield to_a if block_given?
           next_page!
         end
+        first_page!
         paged
       end
       alias_method :each_batch, :each_page
 
       def page_map(&block)
         if total_pages <= 1
-          return (block_given? ? yield(records) : records)
+          return (block_given? ? yield(to_a) : to_a)
         end
 
-        page!(1)
+        first_page!
         paged = []
-        while !records.empty? do
-          paged << (block_given? ? yield(records) : records)
-          page!(current_page + 1)
+        total_pages.times do
+          paged << (block_given? ? yield(to_a) : to_a)
+          next_page!
         end
+        first_page!
         paged
       end
       alias_method :batch_map, :page_map

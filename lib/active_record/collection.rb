@@ -46,7 +46,8 @@ module ActiveRecord
     def initialize_copy(old)
       @options = old.options.dup
       @records = @relation = old.relation.dup
-      page!(old.current_page).per!(old.per_page) if old.paginated?
+      page!(old.current_page).per!(old.per_page) if old.batched? || old.batch?
+      is_batch! if old.batch?
     end
   end
 end
