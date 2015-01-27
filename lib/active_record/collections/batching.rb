@@ -74,19 +74,22 @@ module ActiveRecord
       end
 
       def to_batches
+        total_count # init count once before duping
         batched = dup.batch!
-        batches = []
-        while batched.next_page? do
-          batches << batched.next_page!.as_batch
+        batches = [batched.first_batch!.as_batch]
+        while batched.next_batch? do
+          batches << batched.next_batch!.as_batch
         end
         batches
       end
 
       def as_batches(&block)
+        total_count # init count once before duping
         batched = dup.batch!
-        batches = []
-        while batched.next_page? do
-          b = batched.next_page!.as_batch
+        batches = [batched.first_batch!.as_batch]
+        yield batches.first if block_given?
+        while batched.next_batch? do
+          b = batched.next_batch!.as_batch
           yield b if block_given?
           batches << b
         end
@@ -122,9 +125,9 @@ module ActiveRecord
       end
       alias_method :batch_size!, :per!
 
-      def paginated?
+      def paginated?(check_if_should=false)
         return true if !(@page.nil? && @per.nil?)
-        if should_batch?(false)
+        if check_if_should && should_batch?(false)
           batch!
           true
         else

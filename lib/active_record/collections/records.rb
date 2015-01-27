@@ -23,7 +23,7 @@ module ActiveRecord
       end
 
       def total_count
-        batch! if try(:should_batch?)
+        #batch! if try(:should_batch?)
         total_records
       end
       alias_method :total, :total_count
