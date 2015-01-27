@@ -26,16 +26,6 @@ module ActiveRecord
           new.limit(*args, &block)
         end
 
-        def page(*num)
-          new.page(*num)
-        end
-        alias_method :batch, :page
-
-        def per(num)
-          new.per(num)
-        end
-        alias_method :batch_size, :per
-
         def joins(*args)
           new.joins(*args)
         end
@@ -127,34 +117,6 @@ module ActiveRecord
         relation.limit!(*args, &block)
         self
       end
-
-      def page(*num)
-        dup.page!(*num)
-      end
-      alias_method :batch, :page
-
-      def page!(*num)
-        reset!(false, false)
-        @page = num[0] || 1
-        @per ||= 25
-        @relation = relation.page(@page).per(@per)
-        self
-      end
-      alias_method :batch!, :page!
-
-      def per(num=nil)
-        dup.per!(num)
-      end
-      alias_method :batch_size, :per
-
-      def per!(num)
-        reset!(false, false)
-        @page ||= 1
-        @per = num
-        @relation = relation.page(@page).per(@per)
-        self
-      end
-      alias_method :batch_size!, :per!
 
       def joins(*args)
         dup.joins!(*args)

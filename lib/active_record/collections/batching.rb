@@ -1,7 +1,68 @@
 module ActiveRecord
   module Collections
     module Batching
-      # TODO Mark default_batch_size/threshold
+      def self.included(base)
+        base.send :extend, ClassMethods
+      end
+
+      module ClassMethods
+        def default_batch_size(size=nil)
+          @default_batch_size = size unless size.nil?
+          @default_batch_size ||= 2_000
+        end
+
+        def batching_threshold(threshold=nil)
+          @batching_threshold = threshold unless threshold.nil?
+          @batching_threshold ||= 10_000
+        end
+
+        def page(*num)
+          new.page(*num)
+        end
+        alias_method :batch, :page
+
+        def per(num)
+          new.per(num)
+        end
+        alias_method :batch_size, :per
+      end
+
+      def default_batch_size
+        self.class.default_batch_size
+      end
+
+      def batching_threshold
+        self.class.batching_threshold
+      end
+
+      def page(*num)
+        dup.page!(*num)
+      end
+      alias_method :batch, :page
+
+      def page!(*num)
+        reset!(false, false)
+        @page = num[0] || 1
+        @per ||= 25
+        @relation = relation.page(@page).per(@per)
+        self
+      end
+      alias_method :batch!, :page!
+
+      def per(num=nil)
+        dup.per!(num)
+      end
+      alias_method :batch_size, :per
+
+      def per!(num)
+        reset!(false, false)
+        @page ||= 1
+        @per = num
+        @relation = relation.page(@page).per(@per)
+        self
+      end
+      alias_method :batch_size!, :per!
+
       def paginated?
         !(@page.nil? && @per.nil?)
       end
