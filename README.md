@@ -1,1 +1,3 @@
 # ActiveRecord::Collection
+
+Documentation incoming...
