@@ -13,9 +13,10 @@ module ActiveRecord
         relation.pluck(col)
       end
 
-      def to_a
+      def to_ary
         records.to_a
       end
+      alias_method :to_a, :to_ary
 
       def total_records
         @total_records ||= relation.limit(nil).count
