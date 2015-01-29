@@ -17,7 +17,56 @@ An `ActiveRecord::Collection` can best be described as being somewhere between a
 
 ## Basic Usage
 
-TODO
+### Define a Collection
+
+To define a collection, simply extend `ActiveRecord::Collection` and override the `initialize` method to specify which model the collection represents.
+
+```ruby
+class Thing < ActiveRecord::Base
+end
+
+class Things < ActiveRecord::Collection
+  def initialize(*args)
+    super(Thing, *args)
+  end
+end
+```
+
+**Note:** In the very near future this will likely change to something more like:
+
+```ruby
+class Things < ActiveRecord::Collection
+  collection_model Thing
+end
+```
+
+or possibly:
+
+```ruby
+class Things < ActiveRecord::Collection
+  # we would just imply the singular model name from the plural collection name
+end
+```
+
+### Query a Collection
+
+Once you've defined your collection class, you can start using it just like your model to query for collections of records:
+
+```ruby
+Things.where(an_attribute: value).order(:other_attribute)
+```
+
+More information can be found throughout this documentation.
+
+### Act on Results
+
+You can easily call methods against each of the records in your collection either by using the default dynamic delegation or forcing delegation with `#on_items`.
+
+```ruby
+Things.where(attribute: value).sync_to_cache  # calls the Thing#sync_to_cache instance method on all the records in the collection
+```
+
+This becomes much more powerful when you take batching into account and consider the boilerplate code you save not having to manually iterate over each batch aggregating values or performing actions.
 
 ## Delegation
 
@@ -61,6 +110,8 @@ The `or` method is the only query chain method with a slightly different signatu
   MyModel.where(something).or.where(other_thing)  # ActiveRecord::Relation
   MyCollection.where(something).or(other_thing)   # ActiveRecord::Collection
 ```
+
+Other than that, the rest of the query chain behaves exactly the same, and you can use `joins`, `includes`, `order`, `limit`, `where`, `not` and others, along with any scopes defined on the model to build your query criteria.
 
 ## Serialization
 
