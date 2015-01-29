@@ -1,6 +1,6 @@
 module ActiveRecord
   class Collection
-    include ActiveRecord::Collections::QueryChain
+    include ActiveRecord::Collections::Relation
     include ActiveRecord::Collections::Records
     include ActiveRecord::Collections::Batching
     include ActiveRecord::Collections::Delegation

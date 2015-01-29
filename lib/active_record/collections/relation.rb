@@ -1,6 +1,6 @@
 module ActiveRecord
   module Collections
-    module QueryChain
+    module Relation
       def self.included(base)
         base.send :extend, ClassMethods
       end
