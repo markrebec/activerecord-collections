@@ -1,6 +1,6 @@
 # ActiveRecord::Collections
 
-An `ActiveRecord::Collection` can best be described as being somewhere between a model (extended from `ActiveRecord::Base`), it's `ActiveRecord::Relation` and a collection of records. A collection wraps and delegates to the aforementioned objects, being smart about where to send method calls and executing minimal queries only when needed (and as infrequently as possible). The latter allows for some interesting features, like the ability to build a query using all your standard scopes and the model's relation object without executing it, and serializing the query criteria to be used in a background job (instead of plucking and passing record IDs, for example). Or being able to break a collection that contains many records into smaller batches (using limited/offset collections) and traverse through them without needing to query each batch until you want to work with it.
+An `ActiveRecord::Collection` can best be described as being somewhere between a model (extended from `ActiveRecord::Base`), it's `ActiveRecord::Relation` and an enumerable set of records. A collection wraps and delegates to the aforementioned objects, being smart about where to send method calls and executing minimal queries only when needed (and as infrequently as possible). The latter allows for some interesting features, like the ability to build a query using all your standard scopes and the model's relation object without executing it, and serializing the query criteria to be used in a background job (instead of plucking and passing record IDs, for example). Or being able to break a collection that contains many records into smaller batches (using limited/offset collections) and traverse through them without needing to query each batch until you want to work with it.
 
 **Highlights**
 * Makes life easier by eliminating common boilerplate code when querying and working with collections of records.
@@ -11,11 +11,13 @@ An `ActiveRecord::Collection` can best be described as being somewhere between a
 
 **Lowlights**
 * Grouping is not currently supported (I just haven't gotten around to it yet).
-* Be careful with method overlap and delegation! The collection prefers the `ActiveRecord::Relation` when delgating method calls, so if you have a method (maybe a scope) on your relation with the same name as a method (maybe an attribute) on your model, you'll want to make sure you use `#on_items` or `#on_relation` accordingly.
+* Be careful with method overlap and delegation! The collection prefers the `ActiveRecord::Relation` when delgating method calls, so if you have a method (maybe a scope) on your relation with the same name as a method (maybe an attribute) on your model, you'll want to make sure you use `#on_records` or `#on_relation` accordingly.
 * Because of the way the `ActiveRecord::Collection` behaves, it does not include the `Enumerable` module directly, and many common enumerable methods have not yet been implemented (like `select`, `reject`, etc.). If you need to use one of these methods you should call them on your collection of records directly, by grabbing an array of records with `#to_a`, or you can use `#each` or `#map` depending on your needs.
 * This was prototyped in and abstracted from the Instacart rails application, and specs have not yet been ported and filled out.
 
 ## Basic Usage
+
+TODO
 
 ## Delegation
 
@@ -39,7 +41,7 @@ Temporarily routes all dynamic delegation to the records in the collection for i
   end
 ```
 
-### '#on_relation`
+### `#on_relation`
 
 Temporarily routes all dynamic delegation to the relation for inline method calls and blocks. This is used much more rarely than `#on_records` since the default delegation prefers the relation.
 
@@ -51,8 +53,16 @@ Temporarily routes all dynamic delegation to the relation for inline method call
 
 ## Querying
 
+TODO
+
 ## Serialization
+
+TODO
 
 ## Batching
 
+TODO
+
 ## Iterating and Manipulating
+
+TODO
