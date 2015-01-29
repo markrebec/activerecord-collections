@@ -11,7 +11,7 @@ An `ActiveRecord::Collection` can best be described as being somewhere between a
 
 **Lowlights**
 * Grouping is not currently supported (I just haven't gotten around to it yet).
-* Be careful with method overlap and delegation! The collection prefers the `ActiveRecord::Relation` when delgating method calls, so if you have a method (maybe a scope) on your relation with the same name as a method (maybe an attribute) on your model, you'll want to make sure you use `#on_records` or `#on_relation` accordingly.
+* Be careful with method overlap and delegation! The collection prefers the `ActiveRecord::Relation` when delegating method calls, so if you have a method (maybe a scope) on your relation with the same name as a method (maybe an attribute) on your model, you'll want to make sure you use `#on_records` or `#on_relation` accordingly.
 * Because of the way the `ActiveRecord::Collection` behaves, it does not include the `Enumerable` module directly, and many common enumerable methods have not yet been implemented (like `select`, `reject`, etc.). If you need to use one of these methods you should call them on your collection of records directly, by grabbing an array of records with `#to_a`, or you can use `#each` or `#map` depending on your needs.
 * This was prototyped in and abstracted from the Instacart rails application, and specs have not yet been ported and filled out.
 
@@ -60,7 +60,7 @@ More information can be found throughout this documentation.
 
 ### Act on Results
 
-You can easily call methods against each of the records in your collection either by using the default dynamic delegation or forcing delegation with `#on_items`.
+You can easily call methods against each of the records in your collection either by using the default dynamic delegation or forcing delegation with `#on_records`.
 
 ```ruby
 Things.where(attribute: value).sync_to_cache  # calls the Thing#sync_to_cache instance method on all the records in the collection
