@@ -63,7 +63,8 @@ More information can be found throughout this documentation.
 You can easily call methods against each of the records in your collection either by using the default dynamic delegation or forcing delegation with `#on_records`.
 
 ```ruby
-Things.where(attribute: value).sync_to_cache  # calls the Thing#sync_to_cache instance method on all the records in the collection
+Things.where(attribute: value).sync_to_cache    # calls the Thing#sync_to_cache instance method on all the records in the collection
+Things.where(attribute: value).other_attribute  # returns an array of other_attribute values (mapping the records if loaded, or plucking the attribute if not)
 ```
 
 This becomes much more powerful when you take batching into account and consider the boilerplate code you save not having to manually iterate over each batch aggregating values or performing actions.
