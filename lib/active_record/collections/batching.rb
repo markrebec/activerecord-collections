@@ -97,6 +97,7 @@ module ActiveRecord
       end
       alias_method :in_batches, :as_batches
 
+      # TODO Mark need to either depend on kaminari or check for it before using page/per
       def page(*num)
         dup.page!(*num)
       end
