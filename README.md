@@ -102,6 +102,15 @@ end
 
 We have game series (`Serial`), individual titles/releases (`Games`), publishers and developers. A game is part of a series, and in this simple example is always developed by one developer and published by one publisher.
 
+Here's what the hash and JSON would look like when querying a game collection by publisher and series:
+
+```ruby
+Games.by_publisher_id(1).by_serial_id(1).to_hash
+# => {:select=>[], :distinct=>nil, :joins=>[], :references=>[], :includes=>[], :where=>["\"games\".\"publisher_id\" = $1", "\"games\".\"serial_id\" = $1"], :order=>[], :bind=>[{:name=>"publisher_id", :value=>1}, {:name=>"serial_id", :value=>1}]}
+Games.by_publisher_id(1).by_serial_id(1).to_json
+# => "{\"select\":[],\"distinct\":null,\"joins\":[],\"references\":[],\"includes\":[],\"where\":[\"\\\"games\\\".\\\"publisher_id\\\" = $1\",\"\\\"games\\\".\\\"serial_id\\\" = $1\"],\"order\":[],\"bind\":[{\"name\":\"publisher_id\",\"value\":1},{\"name\":\"serial_id\",\"value\":1}]}"
+```
+
 Now maybe you want to perform a bulk update against a collection of game records, and you expect it to be used to apply updates to large numbers of records at a time, triggered from a form or button in your web UI, so you decide to write a background job that will perform the update for you and send a notification when it's done.
 
 You might do something like this:
