@@ -53,11 +53,119 @@ Temporarily routes all dynamic delegation to the relation for inline method call
 
 ## Querying
 
-TODO
+For the most part querying with an `ActiveRecord::Collection` is just like querying with an `ActiveRecord::Relation`, which is what your model uses when you call something like `Model.where`.
+
+The `or` method is the only query chain method with a slightly different signature:
+
+```ruby
+  MyModel.where(something).or.where(other_thing)  # ActiveRecord::Relation
+  MyCollection.where(something).or(other_thing)   # ActiveRecord::Collection
+```
 
 ## Serialization
 
-TODO
+One of the most powerful features of active record collections is the ability to serialize your query criteria. Collections can be converted to/from a hash that describes the query criteria used to build the active record relation, and that hash can be converted to JSON and stored or passed around however you'd like.
+
+Say you have a set of models and collections like these:
+
+```ruby
+class Serial < ActiveRecord::Base
+  has_many :games
+end
+
+class Publisher < ActiveRecord::Base
+  has_many :games
+end
+
+class Developer < ActiveRecord::Base
+  has_many :games
+end
+
+class Game < ActiveRecord::Base
+  belongs_to :developer
+  belongs_to :publisher
+  belongs_to :serial
+
+  scope :by_developer_id, -> (developer_ids) { where(developer_id: developer_ids) }
+  scope :by_publisher_id, -> (publisher_ids) { where(publisher_id: publisher_ids) }
+  scope :by_serial_id, -> (serial_ids) { where(serial_id: serial_ids) }
+end
+
+class Games < ActiveRecord::Collection
+  protected
+
+  def initialize(*criteria)
+    super(Game, *criteria)
+  end
+end
+```
+
+We have game series (`Serial`), individual titles/releases (`Games`), publishers and developers. A game is part of a series, and in this simple example is always developed by one developer and published by one publisher.
+
+Now maybe you want to perform a bulk update against a collection of game records, and you expect it to be used to apply updates to large numbers of records at a time, triggered from a form or button in your web UI, so you decide to write a background job that will perform the update for you and send a notification when it's done.
+
+You might do something like this:
+
+```ruby
+class GamesController < ApplicationController
+  def bulk_update
+    UpdatePublisherSerialGamesJob.perform_later(publisher.id, serial.id)
+    redirect_to :back
+  end
+end
+
+class UpdatePublisherSerialGamesJob < ActiveJob::Base
+  def perform(publisher_id, serial_id)
+    Game.by_publisher_id(publisher_id).by_serial_id(serial_id).each do |game|
+      # update each game
+    end
+  end
+end
+```
+
+But what happens when you decide you want to update games that belong to a developer and serial, rather than publisher? You can make the arguments for the job a bit more dynamic, but you'll need to edit this job every time you have a new set of criteria for which you want to apply bulk updates.
+
+You might switch to a job that accepts `game_ids` instead of criteria arguments:
+
+```ruby
+class GamesController < ApplicationController
+  def bulk_update
+    UpdateGamesJob.perform_later(Game.by_publisher_id(publisher.id).by_serial_id(serial.id).pluck(:id))
+    redirect_to :back
+  end
+end
+
+class UpdateGamesJob < ActiveJob::Base
+  def perform(game_ids)
+    Game.where(id: game_ids).each do |game|
+      # update each game
+    end
+  end
+end
+```
+
+But now you have to pluck IDs from the database in order to queue up your job. This is admittedly not that heavy, but if you plan on processing large numbers of records we can do better!
+
+```ruby
+class GamesController < ApplicationController
+  def bulk_update
+    UpdateGamesJob.perform_later(Games.by_publisher_id(publisher.id).by_serial_id(serial.id).to_json) # this is instant, and does not query the database
+    redirect_to :back
+  end
+end
+
+class UpdateGamesJob < ActiveJob::Base
+  def perform(game_collection)
+    Games.from_json(game_collection).each do |game|
+      # update each game
+    end
+  end
+end
+```
+
+Now you can queue up a job to process millions of records in just a few milliseconds, and you can pass any game collection (or even a batch) based on whatever criteria you want to your job!
+
+The one thing to keep in mind when serializing and passing a collection around is that it's possible the records that match your criteria will change between the time you serialize and the time you use the collection. In some cases this is good - you catch newer records that wouldn't have been caught if you'd queried and passed IDs, or you want to re-execute a query and collect results over time. In some cases it can be bad - you might want to operate on a very specific set of rows, in which case you'd probably want to query by ID anyway. But in most common uses it's likely something you won't need to think about (it behaves just like the first example job above that accepts criteria arguments).
 
 ## Batching
 
