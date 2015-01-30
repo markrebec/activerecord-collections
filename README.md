@@ -2,6 +2,8 @@
 
 An `ActiveRecord::Collection` can best be described as being somewhere between a model (extended from `ActiveRecord::Base`), it's `ActiveRecord::Relation` and an enumerable set of records. A collection wraps and delegates to the aforementioned objects, being smart about where to send method calls and executing minimal queries only when needed (and as infrequently as possible). The latter allows for some interesting features, like the ability to build a query using all your standard scopes and the model's relation object without executing it, and serializing the query criteria to be used in a background job (instead of plucking and passing record IDs, for example). Or being able to break a collection that contains many records into smaller batches (using limited/offset collections) and traverse through them without needing to query each batch until you want to work with it.
 
+The implementation is nothing fancy or crazy, there is some heavy usage of delegation but not much beyond that, however I believe the concept here is very powerful. Aside from some of the benefits gained from batching, serialization and some of the other features, collections allow you to use a single object and interface to represent a set of records and use that object both to query and operate on those records.
+
 **Highlights**
 * Makes life easier by eliminating common boilerplate code when querying and working with collections of records.
 * Smart about delegating methods to your model's relation object or a collection of records, with the ability to force delegation to one or the other inline.
