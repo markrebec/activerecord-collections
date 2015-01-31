@@ -30,7 +30,6 @@ module ActiveRecord
       def per_page
         limit_value
       end
-      alias_method :per_page, :limit_value
 
       def next_page
         current_page + 1 unless last_page?
