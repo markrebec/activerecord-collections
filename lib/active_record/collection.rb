@@ -5,7 +5,34 @@ module ActiveRecord
     include ActiveRecord::Collections::Batching
     include ActiveRecord::Collections::Delegation
     include ActiveRecord::Collections::Serialization
-    attr_reader :model, :relation, :options
+    attr_reader :relation, :options
+
+    class << self
+      def collectable(klass=nil)
+        unless klass.nil?
+          raise ArgumentError, "The collection model must inherit from ActiveRecord::Base" unless klass.ancestors.include?(ActiveRecord::Base)
+          @collectable = klass
+        end
+
+        if @collectable.nil?
+          begin
+            klass = self.name.demodulize.singularize.constantize
+            @collectable = klass if !klass.nil? && klass.ancestors.include?(ActiveRecord::Base)
+          rescue
+            # singularized class doesn't exist
+          end
+        end
+
+        raise "Unable to determine a model to use for your collection, please set one with the `collectable` class method" if @collectable.nil? # TODO implement real exceptions
+        @collectable
+      end
+      alias_method :model, :collectable
+    end
+
+    def collectable
+      @collectable || self.class.collectable
+    end
+    alias_method :model, :collectable
 
     # dup relation and call none so that we don't end up inspecting it
     # and loading it before we want it
@@ -19,15 +46,20 @@ module ActiveRecord
 
     protected
 
-    def initialize(model, *criteria)
-      @model = model
-      self.class.instance_eval do
-        model_plural = model.name.demodulize.pluralize.underscore
-        model_singular = model.name.demodulize.singularize.underscore
-        alias_method model_plural.to_sym, :records
-        alias_method "#{model_singular}_ids".to_sym, :record_ids
-        alias_method "on_#{model_plural}".to_sym, :on_records
+    def initialize(*criteria)
+      if criteria.first.present? && criteria.first.ancestors.include?(ActiveRecord::Base)
+        @collectable = criteria.slice!(0)
       end
+
+      plural_name = collectable.name.demodulize.pluralize.underscore
+      singular_name = collectable.name.demodulize.singularize.underscore
+
+      self.class.instance_eval do
+        alias_method plural_name.to_sym, :records
+        alias_method "#{singular_name}_ids".to_sym, :record_ids
+        alias_method "on_#{plural_name}".to_sym, :on_records
+      end
+
       @options = {} # defaults, not implemented yet
       @options.merge!(criteria.extract_options!) if criteria.length > 1
 
@@ -36,10 +68,10 @@ module ActiveRecord
         if criteria.is_a?(ActiveRecord::Relation)
           @relation = criteria
         elsif criteria.is_a?(Hash) || criteria.is_a?(String) || criteria.is_a?(Array)
-          @relation = model.where(criteria).dup
+          @relation = collectable.where(criteria).dup
         end
       else
-        @relation = model.where(criteria).dup
+        @relation = collectable.where(criteria).dup
       end
     end
 

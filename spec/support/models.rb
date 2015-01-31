@@ -20,10 +20,4 @@ end
 class StockedProducts < ActiveRecord::Collection
   default_batch_size 200
   batching_threshold 500
-
-  protected
-
-  def initialize(*criteria)
-    super(StockedProduct, *criteria)
-  end
 end
