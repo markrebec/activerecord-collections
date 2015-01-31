@@ -1,22 +1,42 @@
 module ActiveRecord
   module Collections
     module Pagination
-      def page(*args)
-        dup.page!(*args)
+      def self.included(base)
+        base.send :extend, ClassMethods
       end
 
-      def page!(*args)
-        @relation = relation.page(*args)
+      module ClassMethods
+        def default_per_page(pp=nil)
+          @default_per_page = pp unless pp.nil?
+          @default_per_page ||= 25
+        end
+      end
+
+      def default_per_page
+        self.class.default_per_page
+      end
+
+      def page(pg=1)
+        dup.page!(pg)
+      end
+
+      def page!(pg=1)
+        paginate!(pg, default_per_page)
         self
       end
 
-      def per(*args)
-        dup.per!(*args)
+      def per(pp=nil)
+        dup.per!(pp)
       end
 
-      def per!(*args)
-        @relation = relation.page(current_page).per(*args)
+      def per!(pp=nil)
+        paginate!(current_page, (pp || default_per_page))
         self
+      end
+
+      def paginate!(pg, pp)
+        limit!(pp)
+        offset!((pg - 1) * pp)
       end
 
       def total_pages
