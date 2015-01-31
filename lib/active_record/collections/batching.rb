@@ -52,6 +52,11 @@ module ActiveRecord
         batch_by_default?
       end
 
+      def is_batched?
+        @is_batched || false
+      end
+      alias_method :batched?, :is_batched?
+
       def batch(btch=1)
         dup.batch!(btch)
       end
@@ -69,6 +74,7 @@ module ActiveRecord
       end
 
       def batchify!(btch, bs)
+        @is_batched = true
         limit!(bs)
         offset!((btch - 1) * bs)
       end

@@ -158,14 +158,14 @@ module ActiveRecord
         self
       end
 
-      def reset(clear_total=true, clear_batches=true)
-        dup.reset!(clear_total, clear_batches)
-      end
-
       %i(bind_values select_values distinct_value joins_values includes_values references_values where_values order_values limit_value offset_value).each do |meth|
         define_method meth do
           relation.send(meth)
         end
+      end
+
+      def reset(clear_total=true, clear_batches=true)
+        dup.reset!(clear_total, clear_batches)
       end
 
       def reset!(clear_total=true, clear_batches=true)
@@ -173,7 +173,7 @@ module ActiveRecord
         @total_count = nil if clear_total
         relation.reset
         if clear_batches
-          @current_batch = @batch_size = nil
+          @is_batched = false
           relation.limit!(nil).offset!(nil)
         end
         self
