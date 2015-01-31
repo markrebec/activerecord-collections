@@ -32,7 +32,7 @@ module ActiveRecord
         def per(num)
           new.per(num)
         end
-        alias_method :batch_size, :per
+        alias_method :per_batch, :per
       end
 
       def default_batch_size
@@ -115,7 +115,7 @@ module ActiveRecord
       def per(num=nil)
         dup.per!(num)
       end
-      alias_method :batch_size, :per
+      alias_method :per_batch, :per
 
       def per!(num)
         reset!(false, false)
@@ -124,7 +124,7 @@ module ActiveRecord
         @relation = relation.page(@page).per(@per)
         self
       end
-      alias_method :batch_size!, :per!
+      alias_method :per_batch!, :per!
 
       def paginated?(check_if_should=false)
         return true if !(@page.nil? && @per.nil?)
@@ -142,14 +142,14 @@ module ActiveRecord
       end
       alias_method :current_batch, :current_page
 
-      def per_page
+      def page_size
         @per || total_count
       end
-      alias_method :per_batch, :per_page
+      alias_method :batch_size, :page_size
 
       def total_pages
         return 1 if is_batch?
-        (total_count.to_f / per_page.to_f).ceil
+        (total_count.to_f / page_size.to_f).ceil
       end
       alias_method :total_batches, :total_pages
 

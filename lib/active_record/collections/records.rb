@@ -26,7 +26,7 @@ module ActiveRecord
         total_records
       end
       alias_method :total, :total_count
-      alias_method :count, :total_count
+      #alias_method :count, :total_count
 
       def size
         @size ||= relation.size
@@ -41,7 +41,7 @@ module ActiveRecord
       end
 
       def each_in_batches(batch_size=nil, &block)
-        batch_size!(batch_size)
+        per_batch!(batch_size)
         flat_batch_map.each { |record| block_given? ? yield(record) : record }
       end
 
@@ -50,7 +50,7 @@ module ActiveRecord
       end
 
       def map_in_batches(batch_size=nil, &block)
-        batch_size!(batch_size)
+        per_batch!(batch_size)
         flat_batch_map.map { |record| block_given? ? yield(record) : record }
       end
 
@@ -59,7 +59,7 @@ module ActiveRecord
       end
 
       def flat_map_in_batches(batch_size=nil, &block)
-        batch_size!(batch_size)
+        per_batch!(batch_size)
         flat_batch_map.map { |record| block_given? ? yield(record) : record }
       end
     end
