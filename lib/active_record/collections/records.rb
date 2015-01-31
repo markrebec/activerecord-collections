@@ -38,7 +38,7 @@ module ActiveRecord
       end
 
       def each(&block)
-        batch! if try(:should_batch?)
+        #batch! if try(:should_batch?)
 
         if try(:batched?)
           flat_batch_map.each { |record| block_given? ? yield(record) : record }
@@ -48,7 +48,7 @@ module ActiveRecord
       end
 
       def map(&block)
-        batch! if try(:should_batch?)
+        #batch! if try(:should_batch?)
 
         if try(:batched?)
           flat_batch_map.map { |record| block_given? ? yield(record) : record }

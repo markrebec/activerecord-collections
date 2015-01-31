@@ -30,7 +30,7 @@ module ActiveRecord
     end
 
     def collectable
-      @collectable || self.class.collectable
+      @collectable ||= self.class.collectable
     end
     alias_method :model, :collectable
 
