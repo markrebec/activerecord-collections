@@ -75,8 +75,8 @@ module ActiveRecord
 
       def batchify!(btch, bs)
         @is_batched = true
-        limit!(bs)
-        offset!((btch - 1) * bs)
+        limit!(bs.to_i)
+        offset!((btch.to_i - 1) * bs.to_i)
       end
 
       def total_batches

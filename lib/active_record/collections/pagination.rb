@@ -33,8 +33,8 @@ module ActiveRecord
       end
 
       def paginate!(pg, pp)
-        limit!(pp)
-        offset!((pg - 1) * pp)
+        limit!(pp.to_i)
+        offset!((pg.to_i - 1) * pp.to_i)
       end
 
       def total_pages
