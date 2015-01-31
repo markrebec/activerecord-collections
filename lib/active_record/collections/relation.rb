@@ -128,6 +128,20 @@ module ActiveRecord
         self
       end
 
+      # TODO make this not dependent on kaminari
+      def page!(*args)
+        @relation = relation.page(*args)
+        self
+      end
+      alias_method :page, :page!
+
+      def per!(*args)
+        @relation = relation.page((relation.offset_value / relation.limit_value) + 1).per(*args)
+        self
+      end
+      alias_method :per, :per!
+      # END kaminari
+
       def joins(*args)
         dup.joins!(*args)
       end

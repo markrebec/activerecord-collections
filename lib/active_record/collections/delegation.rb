@@ -82,7 +82,7 @@ module ActiveRecord
       end
 
       def call_on_relation(meth, *args)
-        reset!
+        reset!(false, false)
         returned = relation.send(meth, *args)
         if returned.is_a?(ActiveRecord::Relation)
           @relation = returned
