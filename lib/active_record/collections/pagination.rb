@@ -22,7 +22,6 @@ module ActiveRecord
 
       def page!(pg=1)
         paginate!(pg, default_per_page)
-        self
       end
 
       def per(pp=nil)
@@ -31,7 +30,6 @@ module ActiveRecord
 
       def per!(pp=nil)
         paginate!(current_page, (pp || default_per_page))
-        self
       end
 
       def paginate!(pg, pp)

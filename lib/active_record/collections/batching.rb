@@ -8,12 +8,12 @@ module ActiveRecord
       module ClassMethods
         def default_batch_size(size=nil)
           @default_batch_size = size unless size.nil?
-          @default_batch_size ||= 2_000
+          @default_batch_size ||= 500
         end
 
         def batching_threshold(threshold=nil)
           @batching_threshold = threshold unless threshold.nil?
-          @batching_threshold ||= 10_000
+          @batching_threshold ||= 0
         end
 
         def batch_by_default!
@@ -47,10 +47,42 @@ module ActiveRecord
           total_count >= batching_threshold )
       end
 
-      def should_batch?(check_if_batched=true)
+      def should_batch?
         return false if is_batch?
-        return false if check_if_batched && batched?
         batch_by_default?
+      end
+
+      def batch(btch=1)
+        dup.batch!(btch)
+      end
+
+      def batch!(btch=1)
+        batchify!(btch, default_batch_size)
+      end
+
+      def per_batch(bs=nil)
+        dup.per_batch!(bs)
+      end
+
+      def per_batch!(bs=nil)
+        batchify!(current_batch, (bs || default_batch_size))
+      end
+
+      def batchify!(btch, bs)
+        limit!(bs)
+        offset!((btch - 1) * bs)
+      end
+
+      def total_batches
+        (total_count.to_f / (relation.limit_value || total_count).to_f).ceil
+      end
+
+      def current_batch
+        (relation.offset_value.to_i / (relation.limit_value || 1)) + 1
+      end
+
+      def batch_size
+        limit_value || total_count
       end
 
       def is_batch!
@@ -76,7 +108,7 @@ module ActiveRecord
         batched = dup.batch!
         batches = [batched.first_batch!.as_batch]
         while batched.next_batch? do
-          batches << batched.next_batch!.as_batch
+          batches << batched.as_next_batch
         end
         batches
       end
@@ -87,7 +119,7 @@ module ActiveRecord
         batches = [batched.first_batch!.as_batch]
         yield batches.first if block_given?
         while batched.next_batch? do
-          b = batched.next_batch!.as_batch
+          b = batched.as_next_batch
           yield b if block_given?
           batches << b
         end
@@ -95,56 +127,8 @@ module ActiveRecord
       end
       alias_method :in_batches, :as_batches
 
-      def batch(batch: 1, batch_size: nil)
-        dup.batch!(batch: batch, batch_size: batch_size)
-      end
-
-      def batch!(batch: 1, batch_size: nil)
-        reset!(false, false)
-        @current_batch = batch
-        @batch_size = batch_size unless batch_size.nil?
-        @batch_size ||= default_batch_size
-        @relation = relation.limit(@batch_size).offset((@current_batch - 1) * @batch_size)
-        self
-      end
-
-      def per_batch(num=nil)
-        dup.per_batch!(num)
-      end
-
-      def per_batch!(num=nil)
-        reset!(false, false)
-        @current_batch ||= 1
-        @batch_size = num || default_batch_size
-        @relation = relation.limit(@batch_size).offset((@current_batch - 1) * @batch_size)
-        self
-      end
-
-      def batched?(check_if_should=false)
-        return true if !(@current_batch.nil? && @batch_size.nil?)
-        if check_if_should && should_batch?(false)
-          batch!
-          true
-        else
-          false
-        end
-      end
-
-      def current_batch
-        @current_batch || 1
-      end
-
-      def batch_size
-        @batch_size || total_count
-      end
-
-      def total_batches
-        return 1 if is_batch?
-        (total_count.to_f / batch_size.to_f).ceil
-      end
-
       def each_batch(&block)
-        batch! if should_batch?
+        batch!
 
         if total_batches <= 1
           yield to_a if block_given?
@@ -163,7 +147,7 @@ module ActiveRecord
       end
 
       def batch_map(&block)
-        batch! if should_batch?
+        batch!
 
         if total_batches <= 1
           return (block_given? ? yield(to_a) : to_a)
@@ -188,7 +172,7 @@ module ActiveRecord
       end
 
       def first_batch!
-        batch!(batch: 1)
+        batch!(1)
       end
 
       def next_batch?
@@ -200,7 +184,7 @@ module ActiveRecord
       end
 
       def next_batch!
-        batch!(batch: current_batch + 1) if next_batch?
+        batch!(current_batch + 1) if next_batch?
       end
 
       def prev_batch?
@@ -212,7 +196,7 @@ module ActiveRecord
       end
 
       def prev_batch!
-        batch!(batch: current_batch - 1) if prev_batch?
+        batch!(current_batch - 1) if prev_batch?
       end
 
       def last_batch
@@ -220,7 +204,7 @@ module ActiveRecord
       end
 
       def last_batch!
-        batch!(batch: total_batches)
+        batch!(total_batches)
       end
     end
   end

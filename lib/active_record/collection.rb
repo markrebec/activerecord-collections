@@ -81,7 +81,6 @@ module ActiveRecord
       @options = old.options.dup
       @records = @relation = old.relation.dup
       @total_count = old.instance_variable_get(:@total_count)
-      batch!(batch: old.current_batch, batch_size: old.batch_size) if old.is_batch? || old.batched?(false)
       is_batch! if old.is_batch?
     end
   end
