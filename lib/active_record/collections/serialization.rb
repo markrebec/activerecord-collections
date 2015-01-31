@@ -32,18 +32,18 @@ module ActiveRecord
 
       def to_hash(include_limit=false)
         h = {
-          select:     relation.select_values,
-          distinct:   relation.distinct_value,
-          joins:      relation.joins_values,
-          references: relation.references_values,
-          includes:   relation.includes_values,
-          where:      relation.where_values.map { |v| v.is_a?(String) ? v : v.to_sql },
-          order:      relation.order_values.map { |v| v.is_a?(String) ? v : v.to_sql },
-          bind:       relation.bind_values.map { |b| {name: b.first.name, value: b.last} }
+          select:     select_values,
+          distinct:   distinct_value,
+          joins:      joins_values,
+          references: references_values,
+          includes:   includes_values,
+          where:      where_values.map { |v| v.is_a?(String) ? v : v.to_sql },
+          order:      order_values.map { |v| v.is_a?(String) ? v : v.to_sql },
+          bind:       bind_values.map { |b| {name: b.first.name, value: b.last} }
         }
         if include_limit || try(:is_batch?)
-          h[:limit] = relation.limit_value
-          h[:offset] = relation.offset_value
+          h[:limit] = limit_value
+          h[:offset] = offset_value
         end
         h
       end

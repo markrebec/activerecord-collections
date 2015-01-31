@@ -10,6 +10,7 @@ module ActiveRecord
 
       module Relation
         def collection
+          # do this with a hash so that we don't cause the relation query to execute
           ActiveRecord::Collection.from_hash({
             klass:      klass,
             select:     select_values,

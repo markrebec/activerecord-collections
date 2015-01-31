@@ -18,12 +18,8 @@ module ActiveRecord
       end
       alias_method :to_a, :to_ary
 
-      def total_records
-        @total_records ||= relation.limit(nil).count
-      end
-
       def total_count
-        total_records
+        @total_count ||= relation.total_count
       end
       alias_method :total, :total_count
       alias_method :count, :total_count

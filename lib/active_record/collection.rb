@@ -5,6 +5,7 @@ module ActiveRecord
     include ActiveRecord::Collections::Batching
     include ActiveRecord::Collections::Delegation
     include ActiveRecord::Collections::Serialization
+    include ActiveRecord::Collections::Pagination
     attr_reader :relation, :options
 
     class << self
@@ -79,7 +80,7 @@ module ActiveRecord
       @collectable = old.collectable
       @options = old.options.dup
       @records = @relation = old.relation.dup
-      @total_records = old.instance_variable_get(:@total_records)
+      @total_count = old.instance_variable_get(:@total_count)
       batch!(batch: old.current_batch, batch_size: old.batch_size) if old.is_batch? || old.batched?(false)
       is_batch! if old.is_batch?
     end

@@ -53,7 +53,7 @@ module ActiveRecord
       end
 
       def select!(*args)
-        reset!
+        #reset!
         @relation = relation.select(*args)
         self
       end
@@ -63,7 +63,7 @@ module ActiveRecord
       end
 
       def distinct!(bool=true)
-        reset!
+        #reset!
         @relation = relation.distinct(bool)
         self
       end
@@ -73,7 +73,7 @@ module ActiveRecord
       end
 
       def where!(*args, &block)
-        reset!
+        #reset!
         relation.where!(*args, &block)
         self
       end
@@ -83,7 +83,7 @@ module ActiveRecord
       end
 
       def not!(*args, &block)
-        reset!
+        #reset!
         @relation = relation.where.not(*args, &block)
         self
       end
@@ -93,7 +93,7 @@ module ActiveRecord
       end
 
       def or!(*args, &block)
-        reset!
+        #reset!
         @relation = relation.or.where(*args, &block)
         self
       end
@@ -103,7 +103,7 @@ module ActiveRecord
       end
 
       def order!(*args, &block)
-        reset!(false)
+        #reset!(false)
         relation.order!(*args, &block)
         self
       end
@@ -113,7 +113,7 @@ module ActiveRecord
       end
 
       def limit!(*args, &block)
-        reset!
+        #reset!
         relation.limit!(*args, &block)
         self
       end
@@ -123,31 +123,17 @@ module ActiveRecord
       end
 
       def offset!(*args, &block)
-        reset!
+        #reset!
         relation.offset!(*args, &block)
         self
       end
-
-      # TODO make this not dependent on kaminari
-      def page!(*args)
-        @relation = relation.page(*args)
-        self
-      end
-      alias_method :page, :page!
-
-      def per!(*args)
-        @relation = relation.page((relation.offset_value / relation.limit_value) + 1).per(*args)
-        self
-      end
-      alias_method :per, :per!
-      # END kaminari
 
       def joins(*args)
         dup.joins!(*args)
       end
 
       def joins!(*args)
-        reset!
+        #reset!
         relation.joins!(*args)
         self
       end
@@ -157,7 +143,7 @@ module ActiveRecord
       end
 
       def includes!(*args)
-        reset!
+        #reset!
         relation.includes!(*args)
         self
       end
@@ -167,7 +153,7 @@ module ActiveRecord
       end
 
       def references!(*table_names)
-        reset!
+        #reset!
         relation.references!(*table_names)
         self
       end
@@ -176,9 +162,15 @@ module ActiveRecord
         dup.reset!(clear_total, clear_batches)
       end
 
+      %i(bind_values select_values distinct_value joins_values includes_values references_values where_values order_values limit_value offset_value).each do |meth|
+        define_method meth do
+          relation.send(meth)
+        end
+      end
+
       def reset!(clear_total=true, clear_batches=true)
         @records = @record_ids = @size = nil
-        @total_records = nil if clear_total
+        @total_count = nil if clear_total
         relation.reset
         if clear_batches
           @current_batch = @batch_size = nil

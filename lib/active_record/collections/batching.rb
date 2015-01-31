@@ -44,7 +44,7 @@ module ActiveRecord
       def batch_by_default?
         self.class.batch_by_default? ||
         ( batching_threshold > 0 &&
-          total_records >= batching_threshold )
+          total_count >= batching_threshold )
       end
 
       def should_batch?(check_if_batched=true)
