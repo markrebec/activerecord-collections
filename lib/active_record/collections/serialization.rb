@@ -12,7 +12,7 @@ module ActiveRecord
 
         def from_hash(hash)
           hash.symbolize_keys!
-          collection = new
+          collection = new(hash[:klass])
           collection.select!(*hash[:select]) unless hash[:select].empty?
           collection.distinct! if hash[:distinct] == true
           collection.joins!(*hash[:joins]) unless hash[:joins].empty?
@@ -20,8 +20,8 @@ module ActiveRecord
           collection.includes!(*hash[:includes]) unless hash[:includes].empty?
           collection.where!(*hash[:bind].map { |b| b[:value] }.unshift(hash[:where].join(" AND ").gsub(/\$\d/,'?'))) unless hash[:where].empty?
           collection.order!(hash[:order]) unless hash[:order].empty?
-          collection.limit!(hash[:limit]) unless hash[:limit].empty?
-          collection.offset!(hash[:offset]) unless hash[:offset].empty?
+          collection.limit!(hash[:limit]) unless hash[:limit].nil?
+          collection.offset!(hash[:offset]) unless hash[:offset].nil?
           collection
         end
       end
