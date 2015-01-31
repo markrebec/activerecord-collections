@@ -19,7 +19,7 @@ module ActiveRecord
       alias_method :to_a, :to_ary
 
       def total_count
-        @total_count ||= relation.total_count
+        @total_count ||= relation.dup.limit(nil).offset(nil).count
       end
       alias_method :total, :total_count
       alias_method :count, :total_count

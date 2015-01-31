@@ -28,7 +28,7 @@ module ActiveRecord
       end
 
       def per_page
-        limit_value
+        limit_value || total_count
       end
 
       def next_page
