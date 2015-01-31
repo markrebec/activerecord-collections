@@ -23,7 +23,6 @@ module ActiveRecord
       end
 
       def total_count
-        #batch! if try(:should_batch?)
         total_records
       end
       alias_method :total, :total_count
@@ -38,27 +37,30 @@ module ActiveRecord
       end
 
       def each(&block)
-        #batch! if try(:should_batch?)
+        records.each { |record| block_given? ? yield(record) : record }
+      end
 
-        if try(:batched?)
-          flat_batch_map.each { |record| block_given? ? yield(record) : record }
-        else
-          records.each { |record| block_given? ? yield(record) : record }
-        end
+      def each_in_batches(batch_size=nil, &block)
+        batch_size!(batch_size)
+        flat_batch_map.each { |record| block_given? ? yield(record) : record }
       end
 
       def map(&block)
-        #batch! if try(:should_batch?)
+        each.map { |record| block_given? ? yield(record) : record }
+      end
 
-        if try(:batched?)
-          flat_batch_map.map { |record| block_given? ? yield(record) : record }
-        else
-          each.map { |record| block_given? ? yield(record) : record }
-        end
+      def map_in_batches(batch_size=nil, &block)
+        batch_size!(batch_size)
+        flat_batch_map.map { |record| block_given? ? yield(record) : record }
       end
 
       def flat_map(&block)
         map(&block).flatten
+      end
+
+      def flat_map_in_batches(batch_size=nil, &block)
+        batch_size!(batch_size)
+        flat_batch_map.map { |record| block_given? ? yield(record) : record }
       end
     end
   end

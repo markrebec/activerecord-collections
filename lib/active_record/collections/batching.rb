@@ -154,6 +154,8 @@ module ActiveRecord
       alias_method :total_batches, :total_pages
 
       def each_page(&block)
+        batch! if should_batch?
+
         if total_pages <= 1
           yield to_a if block_given?
           return [to_a]
@@ -172,6 +174,8 @@ module ActiveRecord
       alias_method :each_batch, :each_page
 
       def page_map(&block)
+        batch! if should_batch?
+
         if total_pages <= 1
           return (block_given? ? yield(to_a) : to_a)
         end
