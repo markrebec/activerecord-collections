@@ -40,7 +40,7 @@ module ActiveRecord
       end
 
       def all
-        reset.limit!(nil)
+        reset
       end
 
       def load
@@ -118,6 +118,16 @@ module ActiveRecord
         self
       end
 
+      def offset(*args, &block)
+        dup.offset!(*args, &block)
+      end
+
+      def offset!(*args, &block)
+        reset!
+        relation.offset!(*args, &block)
+        self
+      end
+
       def joins(*args)
         dup.joins!(*args)
       end
@@ -148,15 +158,18 @@ module ActiveRecord
         self
       end
 
-      def reset(clear_total=true, clear_pages=true)
-        dup.reset!(clear_total, clear_pages)
+      def reset(clear_total=true, clear_batches=true)
+        dup.reset!(clear_total, clear_batches)
       end
 
-      def reset!(clear_total=true, clear_pages=true)
+      def reset!(clear_total=true, clear_batches=true)
         @records = @record_ids = @size = nil
-        @page = @per = nil if clear_pages
         @total_records = nil if clear_total
         relation.reset
+        if clear_batches
+          @current_batch = @batch_size = nil
+          relation.limit!(nil).offset!(nil)
+        end
         self
       end
     end

@@ -26,7 +26,7 @@ module ActiveRecord
         total_records
       end
       alias_method :total, :total_count
-      #alias_method :count, :total_count
+      alias_method :count, :total_count
 
       def size
         @size ||= relation.size

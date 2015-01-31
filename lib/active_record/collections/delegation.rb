@@ -66,7 +66,7 @@ module ActiveRecord
       protected
 
       def call_on_records(meth, *args)
-        return page_map do |batch|
+        return batch_map do |batch|
           if model.columns.map(&:name).include?(meth.to_s) && !batch.loaded?
             batch.pluck(meth)
           else

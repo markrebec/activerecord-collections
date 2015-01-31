@@ -24,15 +24,13 @@ module ActiveRecord
           @batch_by_default || false
         end
 
-        def page(*num)
-          new.page(*num)
+        def batch(*num)
+          new.batch(*num)
         end
-        alias_method :batch, :page
 
-        def per(num)
-          new.per(num)
+        def batch_size(num)
+          new.batch_size(num)
         end
-        alias_method :per_batch, :per
       end
 
       def default_batch_size
@@ -70,7 +68,7 @@ module ActiveRecord
       end
 
       def as_next_batch
-        next_page!.as_batch
+        next_batch!.as_batch
       end
 
       def to_batches
@@ -97,37 +95,33 @@ module ActiveRecord
       end
       alias_method :in_batches, :as_batches
 
-      # TODO Mark need to either depend on kaminari or check for it before using page/per
-      def page(*num)
-        dup.page!(*num)
+      def batch(batch: 1, batch_size: nil)
+        dup.batch!(batch: batch, batch_size: batch_size)
       end
-      alias_method :batch, :page
 
-      def page!(*num)
+      def batch!(batch: 1, batch_size: nil)
         reset!(false, false)
-        @page = num[0] || 1
-        @per ||= default_batch_size
-        @relation = relation.page(@page).per(@per)
+        @current_batch = batch
+        @batch_size = batch_size unless batch_size.nil?
+        @batch_size ||= default_batch_size
+        @relation = relation.limit(@batch_size).offset((@current_batch - 1) * @batch_size)
         self
       end
-      alias_method :batch!, :page!
 
-      def per(num=nil)
-        dup.per!(num)
+      def per_batch(num=nil)
+        dup.per_batch!(num)
       end
-      alias_method :per_batch, :per
 
-      def per!(num)
+      def per_batch!(num=nil)
         reset!(false, false)
-        @page ||= 1
-        @per = num
-        @relation = relation.page(@page).per(@per)
+        @current_batch ||= 1
+        @batch_size = num || default_batch_size
+        @relation = relation.limit(@batch_size).offset((@current_batch - 1) * @batch_size)
         self
       end
-      alias_method :per_batch!, :per!
 
-      def paginated?(check_if_should=false)
-        return true if !(@page.nil? && @per.nil?)
+      def batched?(check_if_should=false)
+        return true if !(@current_batch.nil? && @batch_size.nil?)
         if check_if_should && should_batch?(false)
           batch!
           true
@@ -135,116 +129,99 @@ module ActiveRecord
           false
         end
       end
-      alias_method :batched?, :paginated?
 
-      def current_page
-        @page || 1
+      def current_batch
+        @current_batch || 1
       end
-      alias_method :current_batch, :current_page
 
-      def page_size
-        @per || total_count
+      def batch_size
+        @batch_size || total_count
       end
-      alias_method :batch_size, :page_size
 
-      def total_pages
+      def total_batches
         return 1 if is_batch?
-        (total_count.to_f / page_size.to_f).ceil
+        (total_count.to_f / batch_size.to_f).ceil
       end
-      alias_method :total_batches, :total_pages
 
-      def each_page(&block)
+      def each_batch(&block)
         batch! if should_batch?
 
-        if total_pages <= 1
+        if total_batches <= 1
           yield to_a if block_given?
           return [to_a]
         end
 
-        first_page!
-        paged = []
-        total_pages.times do
-          paged << to_a
+        first_batch!
+        batched = []
+        total_batches.times do
+          batched << to_a
           yield to_a if block_given?
-          next_page!
+          next_batch!
         end
-        first_page!
-        paged
+        first_batch!
+        batched
       end
-      alias_method :each_batch, :each_page
 
-      def page_map(&block)
+      def batch_map(&block)
         batch! if should_batch?
 
-        if total_pages <= 1
+        if total_batches <= 1
           return (block_given? ? yield(to_a) : to_a)
         end
 
-        first_page!
-        paged = []
-        total_pages.times do
-          paged << (block_given? ? yield(to_a) : to_a)
-          next_page!
+        first_batch!
+        batched = []
+        total_batches.times do
+          batched << (block_given? ? yield(to_a) : to_a)
+          next_batch!
         end
-        first_page!
-        paged
+        first_batch!
+        batched
       end
-      alias_method :batch_map, :page_map
 
-      def flat_page_map(&block)
-        page_map(&block).flatten
+      def flat_batch_map(&block)
+        batch_map(&block).flatten
       end
-      alias_method :flat_batch_map, :flat_page_map
 
-      def first_page
-        dup.first_page!
+      def first_batch
+        dup.first_batch!
       end
-      alias_method :first_batch, :first_page
 
-      def first_page!
-        page!(1)
+      def first_batch!
+        batch!(batch: 1)
       end
-      alias_method :first_batch!, :first_page!
 
-      def next_page?
-        current_page < total_pages
+      def next_batch?
+        current_batch < total_batches
       end
-      alias_method :next_batch?, :next_page?
 
-      def next_page
-        dup.next_page!
+      def next_batch
+        dup.next_batch!
       end
-      alias_method :next_batch, :next_page
 
-      def next_page!
-        page!(current_page + 1) if next_page?
+      def next_batch!
+        batch!(batch: current_batch + 1) if next_batch?
       end
-      alias_method :next_batch!, :next_page!
 
-      def prev_page?
-        current_page > 1
+      def prev_batch?
+        current_batch > 1
       end
-      alias_method :prev_batch?, :prev_page?
 
-      def prev_page
-        dup.prev_page!
+      def prev_batch
+        dup.prev_batch!
       end
-      alias_method :prev_batch, :prev_page
 
-      def prev_page!
-        page!(current_page - 1) if prev_page?
+      def prev_batch!
+        batch!(batch: current_batch - 1) if prev_batch?
       end
-      alias_method :prev_batch!, :prev_page!
 
-      def last_page
-        dup.last_page!
+      def last_batch
+        dup.last_batch!
       end
-      alias_method :last_batch, :last_page
 
-      def last_page!
-        page!(total_pages)
+      def last_batch!
+        batch!(batch: total_batches)
       end
-      alias_method :last_batch!, :last_page!
     end
   end
 end
