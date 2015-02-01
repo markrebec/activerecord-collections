@@ -8,7 +8,14 @@ module ActiveRecord
         end
 
         def kollektion
-          @collection_class || ActiveRecord::Collection.collections.to_a.select { |c| c.collectable == self }.first || ActiveRecord::Collection
+          plural_klass = begin
+            pklass = self.name.pluralize.constantize
+            raise "Not an ActiveRecord::Collection" unless pklass.ancestors.include?(ActiveRecord::Collection)
+            pklass
+          rescue
+            nil
+          end
+          @collection_class || ActiveRecord::Collection.collections.to_a.select { |c| c.collectable == self }.first || plural_klass || ActiveRecord::Collection
         end
 
         def collection(*criteria)
