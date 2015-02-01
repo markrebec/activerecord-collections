@@ -66,8 +66,8 @@ module ActiveRecord
       protected
 
       def call_on_records(meth, *args)
-        return batch_map do |batch|
-          if model.columns.map(&:name).include?(meth.to_s) && !batch.loaded?
+        return flat_batch_map do |batch|
+          if collectable.columns.map(&:name).include?(meth.to_s) && !batch.loaded?
             batch.pluck(meth)
           else
             batch.map { |record| record.send(meth, *args) }
@@ -76,8 +76,8 @@ module ActiveRecord
       end
 
       def records_respond_to?(meth, include_private=false)
-        model.public_instance_methods.include?(meth) ||
-        (include_private && model.private_instance_methods.include?(meth)) ||
+        collectable.public_instance_methods.include?(meth) ||
+        (include_private && collectable.private_instance_methods.include?(meth)) ||
         (!records.nil? && records.loaded? && records.first.respond_to?(meth, include_private))
       end
 

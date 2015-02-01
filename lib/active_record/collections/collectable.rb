@@ -32,7 +32,8 @@ module ActiveRecord
             references: references_values,
             includes:   includes_values,
             where:      where_values.map { |v| v.is_a?(String) ? v : v.to_sql },
-            order:      order_values.map { |v| v.is_a?(String) ? v : v.to_sql },
+            group:      group_values.map { |v| (v.is_a?(String) || v.is_a?(Symbol)) ? v : v.to_sql },
+            order:      order_values.map { |v| (v.is_a?(String) || v.is_a?(Symbol)) ? v : v.to_sql },
             bind:       bind_values.map { |b| {name: b.first.name, value: b.last} },
             limit:      limit_value,
             offset:     offset_value

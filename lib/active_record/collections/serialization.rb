@@ -19,6 +19,7 @@ module ActiveRecord
           collection.references!(*hash[:references]) unless hash[:references].empty?
           collection.includes!(*hash[:includes]) unless hash[:includes].empty?
           collection.where!(*hash[:bind].map { |b| b[:value] }.unshift(hash[:where].join(" AND ").gsub(/\$\d/,'?'))) unless hash[:where].empty?
+          collection.group!(hash[:group]) unless hash[:group].empty?
           collection.order!(hash[:order]) unless hash[:order].empty?
           collection.limit!(hash[:limit]) unless hash[:limit].nil?
           collection.offset!(hash[:offset]) unless hash[:offset].nil?
@@ -38,7 +39,8 @@ module ActiveRecord
           references: references_values,
           includes:   includes_values,
           where:      where_values.map { |v| v.is_a?(String) ? v : v.to_sql },
-          order:      order_values.map { |v| v.is_a?(String) ? v : v.to_sql },
+          group:      group_values.map { |v| (v.is_a?(String) || v.is_a?(Symbol)) ? v : v.to_sql },
+          order:      order_values.map { |v| (v.is_a?(String) || v.is_a?(Symbol)) ? v : v.to_sql },
           bind:       bind_values.map { |b| {name: b.first.name, value: b.last} }
         }
         if include_limit || try(:is_batch?)

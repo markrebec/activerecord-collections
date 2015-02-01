@@ -53,7 +53,6 @@ module ActiveRecord
       end
 
       def select!(*args)
-        #reset!
         @relation = relation.select(*args)
         self
       end
@@ -63,7 +62,6 @@ module ActiveRecord
       end
 
       def distinct!(bool=true)
-        #reset!
         @relation = relation.distinct(bool)
         self
       end
@@ -73,8 +71,7 @@ module ActiveRecord
       end
 
       def where!(*args, &block)
-        #reset!
-        relation.where!(*args, &block)
+        @relation = relation.where(*args, &block)
         self
       end
 
@@ -83,7 +80,6 @@ module ActiveRecord
       end
 
       def not!(*args, &block)
-        #reset!
         @relation = relation.where.not(*args, &block)
         self
       end
@@ -93,7 +89,6 @@ module ActiveRecord
       end
 
       def or!(*args, &block)
-        #reset!
         @relation = relation.or.where(*args, &block)
         self
       end
@@ -103,8 +98,16 @@ module ActiveRecord
       end
 
       def order!(*args, &block)
-        #reset!(false)
         relation.order!(*args, &block)
+        self
+      end
+
+      def group(*args)
+        dup.group!(*args)
+      end
+
+      def group!(*args)
+        @relation = relation.group(*args)
         self
       end
 
@@ -113,8 +116,7 @@ module ActiveRecord
       end
 
       def limit!(*args, &block)
-        #reset!
-        relation.limit!(*args, &block)
+        @relation = relation.limit(*args, &block)
         self
       end
 
@@ -123,8 +125,7 @@ module ActiveRecord
       end
 
       def offset!(*args, &block)
-        #reset!
-        relation.offset!(*args, &block)
+        @relation = relation.offset(*args, &block)
         self
       end
 
@@ -133,8 +134,7 @@ module ActiveRecord
       end
 
       def joins!(*args)
-        #reset!
-        relation.joins!(*args)
+        @relation = relation.joins(*args)
         self
       end
 
@@ -143,8 +143,7 @@ module ActiveRecord
       end
 
       def includes!(*args)
-        #reset!
-        relation.includes!(*args)
+        @relation = relation.includes(*args)
         self
       end
 
@@ -153,8 +152,7 @@ module ActiveRecord
       end
 
       def references!(*table_names)
-        #reset!
-        relation.references!(*table_names)
+        @relation = relation.references(*table_names)
         self
       end
 

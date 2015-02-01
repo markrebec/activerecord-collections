@@ -57,20 +57,20 @@ module ActiveRecord
       end
       alias_method :batched?, :is_batched?
 
-      def batch(btch=1)
-        dup.batch!(btch)
+      def batch(batch_size: nil)
+        dup.batch!(batch_size: batch_size)
       end
 
-      def batch!(btch=1)
-        batchify!(btch, default_batch_size)
+      def batch!(batch_size: nil)
+        batchify!(1, (batch_size || limit_value || default_batch_size))
       end
 
-      def per_batch(bs=nil)
+      def per_batch(bs)
         dup.per_batch!(bs)
       end
 
-      def per_batch!(bs=nil)
-        batchify!(current_batch, (bs || default_batch_size))
+      def per_batch!(bs)
+        batchify!(current_batch, bs)
       end
 
       def batchify!(btch, bs)
@@ -80,11 +80,11 @@ module ActiveRecord
       end
 
       def total_batches
-        (total_count.to_f / (relation.limit_value || total_count).to_f).ceil
+        (total_count.to_f / (limit_value || total_count).to_f).ceil
       end
 
       def current_batch
-        (relation.offset_value.to_i / (relation.limit_value || 1)) + 1
+        (offset_value.to_i / (limit_value || 1)) + 1
       end
 
       def batch_size
@@ -134,18 +134,16 @@ module ActiveRecord
       alias_method :in_batches, :as_batches
 
       def each_batch(&block)
-        batch!
-
         if total_batches <= 1
-          yield to_a if block_given?
-          return [to_a]
+          yield dup.as_batch if block_given?
+          return [dup.as_batch]
         end
 
-        first_batch!
         batched = []
+        first_batch!
         total_batches.times do
-          batched << to_a
-          yield to_a if block_given?
+          batched << dup.as_batch
+          yield dup.as_batch if block_given?
           next_batch!
         end
         first_batch!
@@ -153,16 +151,14 @@ module ActiveRecord
       end
 
       def batch_map(&block)
-        batch!
-
         if total_batches <= 1
-          return (block_given? ? yield(to_a) : to_a)
+          return (block_given? ? yield(dup.as_batch) : dup.as_batch)
         end
 
-        first_batch!
         batched = []
+        first_batch!
         total_batches.times do
-          batched << (block_given? ? yield(to_a) : to_a)
+          batched << (block_given? ? yield(dup.as_batch) : dup.as_batch)
           next_batch!
         end
         first_batch!
@@ -178,7 +174,7 @@ module ActiveRecord
       end
 
       def first_batch!
-        batch!(1)
+        batchify!(1, batch_size)
       end
 
       def next_batch?
@@ -190,7 +186,7 @@ module ActiveRecord
       end
 
       def next_batch!
-        batch!(current_batch + 1) if next_batch?
+        batchify!(current_batch + 1, batch_size)
       end
 
       def prev_batch?
@@ -202,7 +198,7 @@ module ActiveRecord
       end
 
       def prev_batch!
-        batch!(current_batch - 1) if prev_batch?
+        batchify!(current_batch - 1, batch_size)
       end
 
       def last_batch
@@ -210,7 +206,7 @@ module ActiveRecord
       end
 
       def last_batch!
-        batch!(total_batches)
+        batchify!(total_batches, batch_size)
       end
     end
   end
