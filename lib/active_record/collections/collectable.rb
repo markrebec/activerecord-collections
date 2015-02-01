@@ -2,16 +2,29 @@ module ActiveRecord
   module Collections
     module Collectable
       module Model
+        def collection_class(klass=nil)
+          @collection_class = klass unless klass.nil?
+          @collection_class
+        end
+
+        def kollektion
+          @collection_class || ActiveRecord::Collection.collections.to_a.select { |c| c.collectable == self }.first || ActiveRecord::Collection
+        end
+
         def collection(*criteria)
-          ActiveRecord::Collection.new(self, *criteria)
+          kollektion.new(self, *criteria)
         end
         alias_method :collect, :collection
       end
 
       module Relation
+        def kollektion
+          klass.kollektion
+        end
+
         def collection
           # do this with a hash so that we don't cause the relation query to execute
-          ActiveRecord::Collection.from_hash({
+          kollektion.from_hash({
             klass:      klass,
             select:     select_values,
             distinct:   distinct_value,
