@@ -9,6 +9,11 @@ module ActiveRecord
     attr_reader :relation, :options
 
     class << self
+      attr_reader :collections
+      def inherited(subclass)
+        (@collections ||= []) << subclass
+      end
+
       def collectable(klass=nil)
         unless klass.nil?
           raise ArgumentError, "The collection model must inherit from ActiveRecord::Base" unless klass.ancestors.include?(ActiveRecord::Base)
