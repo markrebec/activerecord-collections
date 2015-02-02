@@ -12,7 +12,7 @@ module ActiveRecord
 
         def from_hash(hash)
           hash.symbolize_keys!
-          collection = new(hash[:klass])
+          collection = hash.has_key?(:klass) ? new(hash[:klass]) : new
           collection.select!(*hash[:select]) unless hash[:select].empty?
           collection.distinct! if hash[:distinct] == true
           collection.joins!(*hash[:joins]) unless hash[:joins].empty?
