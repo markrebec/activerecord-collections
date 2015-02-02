@@ -6,6 +6,7 @@ module ActiveRecord
           @collection_class = klass unless klass.nil?
           @collection_class
         end
+        alias_method :collector, :collection_class
 
         def kollektion
           plural_klass = begin
@@ -32,18 +33,18 @@ module ActiveRecord
         def collection
           # do this with a hash so that we don't cause the relation query to execute
           kollektion.from_hash({
-            klass:      klass,
-            select:     select_values,
-            distinct:   distinct_value,
-            joins:      joins_values,
-            references: references_values,
-            includes:   includes_values,
-            where:      where_values.map { |v| v.is_a?(String) ? v : v.to_sql },
-            group:      group_values.map { |v| (v.is_a?(String) || v.is_a?(Symbol)) ? v : v.to_sql },
-            order:      order_values.map { |v| (v.is_a?(String) || v.is_a?(Symbol)) ? v : v.to_sql },
-            bind:       bind_values.map { |b| {name: b.first.name, value: b.last} },
-            limit:      limit_value,
-            offset:     offset_value
+            collectable:  klass,
+            select:       select_values,
+            distinct:     distinct_value,
+            joins:        joins_values,
+            references:   references_values,
+            includes:     includes_values,
+            where:        where_values.map { |v| v.is_a?(String) ? v : v.to_sql },
+            group:        group_values.map { |v| (v.is_a?(String) || v.is_a?(Symbol)) ? v : v.to_sql },
+            order:        order_values.map { |v| (v.is_a?(String) || v.is_a?(Symbol)) ? v : v.to_sql },
+            bind:         bind_values.map { |b| {name: b.first.name, value: b.last} },
+            limit:        limit_value,
+            offset:       offset_value
           })
         end
         alias_method :to_collection, :collection

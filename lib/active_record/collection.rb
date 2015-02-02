@@ -53,7 +53,9 @@ module ActiveRecord
     protected
 
     def initialize(*criteria)
-      if criteria.first.present? && criteria.first.respond_to?(:ancestors) && criteria.first.ancestors.include?(ActiveRecord::Base)
+      criteria.compact!
+
+      if criteria.first.present? && criteria.first.respond_to?(:ancestors) && criteria.first < ActiveRecord::Base
         @collectable = criteria.slice!(0)
       end
 

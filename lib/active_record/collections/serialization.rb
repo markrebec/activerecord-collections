@@ -12,7 +12,10 @@ module ActiveRecord
 
         def from_hash(hash)
           hash.symbolize_keys! unless hash.is_a?(HashWithIndifferentAccess)
-          collection = hash.has_key?(:klass) ? new(hash[:klass]) : new
+
+          kollektion = kollektion_from_hash(hash)
+          kollektable = kollektable_from_hash(hash)
+          collection = kollektion.new(kollektable)
           collection.select!(*hash[:select]) unless hash[:select].empty?
           collection.distinct! if hash[:distinct] == true
           collection.joins!(*hash[:joins]) unless hash[:joins].empty?
@@ -25,6 +28,22 @@ module ActiveRecord
           collection.offset!(hash[:offset]) unless hash[:offset].nil?
           collection
         end
+
+        def kollektion_from_hash(hash)
+          kollektion = self
+          kollektion = hash[:collection] if hash.has_key?(:collection)
+          kollektion = kollektion.constantize unless kollektion.is_a?(Class)
+          raise "Invalid collection class: #{kollektion}" unless kollektion <= ActiveRecord::Collection
+          kollektion
+        end
+
+        def kollektable_from_hash(hash)
+          kollektable = nil
+          kollektable = hash[:collectable] if hash.has_key?(:collectable)
+          kollektable = kollektable.constantize unless kollektable.is_a?(Class)
+          raise "Invalid collectable model: #{kollektable}" unless kollektable < ActiveRecord::Base
+          kollektable
+        end
       end
 
       def to_sql
@@ -33,16 +52,18 @@ module ActiveRecord
 
       def to_hash(include_limit=false)
         h = {
-          select:     select_values,
-          distinct:   distinct_value,
-          joins:      joins_values,
-          references: references_values,
-          includes:   includes_values,
-          where:      where_values.map { |v| v.is_a?(String) ? v : v.to_sql },
-          group:      group_values.map { |v| (v.is_a?(String) || v.is_a?(Symbol)) ? v : v.to_sql },
-          order:      order_values.map { |v| (v.is_a?(String) || v.is_a?(Symbol)) ? v : v.to_sql },
-          bind:       bind_values.map { |b| {name: b.first.name, value: b.last} }
+          collectable:  collectable,
+          select:       select_values,
+          distinct:     distinct_value,
+          joins:        joins_values,
+          references:   references_values,
+          includes:     includes_values,
+          where:        where_values.map { |v| v.is_a?(String) ? v : v.to_sql },
+          group:        group_values.map { |v| (v.is_a?(String) || v.is_a?(Symbol)) ? v : v.to_sql },
+          order:        order_values.map { |v| (v.is_a?(String) || v.is_a?(Symbol)) ? v : v.to_sql },
+          bind:         bind_values.map { |b| {name: b.first.name, value: b.last} }
         }
+        h[:collection] = self.class if self.class < ActiveRecord::Collection
         if include_limit || try(:is_batch?)
           h[:limit] = limit_value
           h[:offset] = offset_value
