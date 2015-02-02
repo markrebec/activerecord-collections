@@ -21,7 +21,7 @@ module ActiveRecord
         def collection(*criteria)
           kollektion.new(self, *criteria)
         end
-        alias_method :collect, :collection
+        alias_method :to_collection, :collection
       end
 
       module Relation
@@ -46,7 +46,7 @@ module ActiveRecord
             offset:     offset_value
           })
         end
-        alias_method :collect, :collection
+        alias_method :to_collection, :collection
       end
     end
   end
