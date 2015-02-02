@@ -11,7 +11,7 @@ module ActiveRecord
         end
 
         def from_hash(hash)
-          hash.symbolize_keys!
+          hash.symbolize_keys! unless hash.is_a?(HashWithIndifferentAccess)
           collection = hash.has_key?(:klass) ? new(hash[:klass]) : new
           collection.select!(*hash[:select]) unless hash[:select].empty?
           collection.distinct! if hash[:distinct] == true
