@@ -32,20 +32,8 @@ module ActiveRecord
 
         def collection
           # do this with a hash so that we don't cause the relation query to execute
-          kollektion.from_hash({
-            collectable:  klass,
-            select:       select_values,
-            distinct:     distinct_value,
-            joins:        joins_values,
-            references:   references_values,
-            includes:     includes_values,
-            where:        where_values.map { |v| v.is_a?(String) ? v : v.to_sql },
-            group:        group_values.map { |v| (v.is_a?(String) || v.is_a?(Symbol)) ? v : v.to_sql },
-            order:        order_values.map { |v| (v.is_a?(String) || v.is_a?(Symbol)) ? v : v.to_sql },
-            bind:         bind_values.map { |b| {name: b.first.name, value: b.last} },
-            limit:        limit_value,
-            offset:       offset_value
-          })
+          hash = ActiveRecord::Collections::Serializer.to_hash(values.merge({collectable: klass}))
+          kollektion.from_hash(hash)
         end
         alias_method :to_collection, :collection
       end
