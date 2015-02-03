@@ -72,8 +72,15 @@ module ActiveRecord
       end
       alias_method :to_h, :to_hash
 
+      def as_json(options=nil)
+        h = to_hash
+        h[:collectable] = h[:collectable].try(:name)
+        h[:collection] = h[:collection].name if h.has_key?(:collection)
+        h.as_json(options)
+      end
+
       def to_json(options=nil)
-        to_hash.to_json
+        as_json.to_json(options)
       end
 
       def to_param
