@@ -170,7 +170,7 @@ module ActiveRecord
       end
 
       def first_batch
-        dup.first_batch!
+        dup.first_batch!.is_batch!
       end
 
       def first_batch!
@@ -182,7 +182,7 @@ module ActiveRecord
       end
 
       def next_batch
-        dup.next_batch!
+        dup.next_batch!.is_batch!
       end
 
       def next_batch!
@@ -194,7 +194,7 @@ module ActiveRecord
       end
 
       def prev_batch
-        dup.prev_batch!
+        dup.prev_batch!.is_batch!
       end
 
       def prev_batch!
@@ -202,7 +202,7 @@ module ActiveRecord
       end
 
       def last_batch
-        dup.last_batch!
+        dup.last_batch!.is_batch!
       end
 
       def last_batch!
