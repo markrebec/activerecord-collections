@@ -30,10 +30,15 @@ module ActiveRecord
           klass.kollektion
         end
 
+        def values_hash
+          ActiveRecord::Collections::Serializer.to_hash(values.merge({collectable: klass}))
+        end
+        alias_method :to_values_hash, :values_hash
+        alias_method :to_hash, :values_hash
+
         def collection
           # do this with a hash so that we don't cause the relation query to execute
-          hash = ActiveRecord::Collections::Serializer.to_hash(values.merge({collectable: klass}))
-          kollektion.from_hash(hash)
+          kollektion.from_hash(values_hash)
         end
         alias_method :to_collection, :collection
       end
