@@ -34,7 +34,6 @@ module ActiveRecord
           ActiveRecord::Collections::Serializer.to_hash(values.merge({collectable: klass}))
         end
         alias_method :to_values_hash, :values_hash
-        alias_method :to_hash, :values_hash
 
         def collection
           # do this with a hash so that we don't cause the relation query to execute
