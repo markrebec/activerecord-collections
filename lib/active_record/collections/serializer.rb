@@ -71,7 +71,8 @@ module ActiveRecord
           else
             true
           end
-        end.unshift(hashed)
+        end
+        @where.unshift(hashed)
         @where
       end
 
