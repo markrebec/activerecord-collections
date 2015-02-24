@@ -20,32 +20,19 @@ The implementation is nothing fancy or crazy, there is some heavy usage of deleg
 
 ### Define a Collection
 
-To define a collection, simply extend `ActiveRecord::Collection` and override the `initialize` method to specify which model the collection represents.
+To define a collection, simply extend `ActiveRecord::Collection`. If your collection class name is the pluralized version of your model name, no additional configuration is necessary.
 
 ```ruby
-class Thing < ActiveRecord::Base
-end
-
 class Things < ActiveRecord::Collection
-  def initialize(*args)
-    super(Thing, *args)
-  end
+  # uses the singular class name, so in this case our collectable model is Thing
 end
 ```
 
-**Note:** In the very near future this will likely change to something more like:
+You can define the `collectable` model for your collection if you're using a custom class name.
 
 ```ruby
-class Things < ActiveRecord::Collection
-  collection_model Thing
-end
-```
-
-or possibly:
-
-```ruby
-class Things < ActiveRecord::Collection
-  # we would just imply the singular model name from the plural collection name
+class ThingCollection < ActiveRecord::Collection
+  collectable Thing
 end
 ```
 
