@@ -130,6 +130,11 @@ module ActiveRecord
               bound = bind.delete_at(bind.find_index { |b| b[:name] == node.left.name.to_s })[:value]
             elsif node.right.is_a?(Arel::Nodes::Casted)
               bound = node.right.val
+            elsif node.right.is_a?(Array)
+              bound = node.right.map do |n|
+                raise "ActiveRecord::Collection does not know how to serialize this attribute: #{node.left.name} / #{n.class.name}" unless n.is_a?(Arel::Nodes::Casted)
+                n.val
+              end
             else
               raise "ActiveRecord::Collection does not know how to serialize this attribute: #{node.left.name} / #{node.right.class.name}"
             end
