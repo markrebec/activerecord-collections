@@ -80,7 +80,7 @@ module ActiveRecord
       end
 
       def total_batches
-        (total_count.to_f / (limit_value || total_count).to_f).ceil
+        total_count == 0 ? 0 : (total_count.to_f / batch_size.to_f).ceil
       end
 
       def current_batch
