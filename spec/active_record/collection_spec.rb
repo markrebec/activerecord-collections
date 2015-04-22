@@ -15,8 +15,8 @@ RSpec.describe ActiveRecord::Collection do
 
   context 'batching' do
     describe 'default_batch_size' do
-      it 'should default to 2000' do
-        expect(ActiveRecord::Collection.default_batch_size).to eql(2000)
+      it 'should default to 500' do
+        expect(ActiveRecord::Collection.default_batch_size).to eql(500)
       end
 
       it 'should be overridable by extending classes' do
@@ -25,8 +25,8 @@ RSpec.describe ActiveRecord::Collection do
     end
 
     describe 'batching_threshold' do
-      it 'should default to 10000' do
-        expect(ActiveRecord::Collection.batching_threshold).to eql(10000)
+      it 'should default to 0' do
+        expect(ActiveRecord::Collection.batching_threshold).to eql(0)
       end
 
       it 'should be overridable by extending classes' do
