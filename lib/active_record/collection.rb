@@ -9,6 +9,7 @@ module ActiveRecord
     attr_reader :relation, :options
 
     class << self
+      attr_accessor :kollektable
       attr_reader :collections
       def inherited(subclass)
         (@collections ||= []) << subclass
@@ -17,20 +18,20 @@ module ActiveRecord
       def collectable(klass=nil)
         unless klass.nil?
           raise ArgumentError, "The collection model must inherit from ActiveRecord::Base" unless klass.ancestors.include?(ActiveRecord::Base)
-          @collectable = klass
+          self.kollektable = klass
         end
 
-        if @collectable.nil?
+        if self.kollektable.nil?
           begin
             klass = self.name.demodulize.singularize.constantize
-            @collectable = klass if !klass.nil?# && klass.ancestors.include?(ActiveRecord::Base)
+            self.kollektable = klass if !klass.nil? && klass.ancestors.include?(ActiveRecord::Base)
           rescue
             # singularized class doesn't exist
           end
         end
 
-        raise "Unable to determine a model to use for your collection, please set one with the `collectable` class method" if @collectable.nil? # TODO implement real exceptions
-        @collectable
+        raise "Unable to determine a model to use for your collection, please set one with the `collectable` class method" if self.kollektable.nil? # TODO implement real exceptions
+        self.kollektable
       end
       alias_method :model, :collectable
     end
