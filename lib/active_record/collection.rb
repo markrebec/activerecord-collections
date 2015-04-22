@@ -23,7 +23,7 @@ module ActiveRecord
         if @collectable.nil?
           begin
             klass = self.name.demodulize.singularize.constantize
-            @collectable = klass if !klass.nil? && klass.ancestors.include?(ActiveRecord::Base)
+            @collectable = klass if !klass.nil?# && klass.ancestors.include?(ActiveRecord::Base)
           rescue
             # singularized class doesn't exist
           end
