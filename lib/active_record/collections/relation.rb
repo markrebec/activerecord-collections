@@ -48,6 +48,10 @@ module ActiveRecord
         records
       end
 
+      def loaded?
+        relation.loaded?
+      end
+
       def select(*args)
         dup.select!(*args)
       end
