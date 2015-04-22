@@ -8,35 +8,32 @@ module ActiveRecord
     include ActiveRecord::Collections::Pagination
     attr_reader :relation, :options
 
-    @@lock = Mutex.new
+    COLLECTABLES = {}
+    COLLECTIONS = []
 
     class << self
       attr_reader :collections
       def inherited(subclass)
-        @@lock.synchronize do
-          (@collections ||= []) << subclass
-        end
+        COLLECTIONS << subclass
       end
 
       def collectable(klass=nil)
-        @@lock.synchronize do
-          unless klass.nil?
-            raise ArgumentError, "The collection model must inherit from ActiveRecord::Base" unless klass.ancestors.include?(ActiveRecord::Base)
-            @collectable = klass
-          end
-
-          if @collectable.nil?
-            begin
-              klass = self.name.demodulize.singularize.constantize
-              @collectable = klass if !klass.nil? && klass.ancestors.include?(ActiveRecord::Base)
-            rescue
-              # singularized class doesn't exist
-            end
-          end
-
-          raise "Unable to determine a model to use for your collection, please set one with the `collectable` class method" if @collectable.nil? # TODO implement real exceptions
-          @collectable
+        unless klass.nil?
+          raise ArgumentError, "The collection model must inherit from ActiveRecord::Base" unless klass.ancestors.include?(ActiveRecord::Base)
+          COLLECTABLES[name] ||= klass
         end
+
+        if COLLECTABLES[name].nil?
+          begin
+            klass = self.name.demodulize.singularize.constantize
+            COLLECTABLES[name] = klass if !klass.nil? && klass.ancestors.include?(ActiveRecord::Base)
+          rescue
+            # singularized class doesn't exist
+          end
+        end
+
+        raise "Unable to determine a model to use for your collection, please set one with the `collectable` class method" if COLLECTABLES[name].nil? # TODO implement real exceptions
+        COLLECTABLES[name]
       end
       alias_method :model, :collectable
     end
