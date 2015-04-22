@@ -37,7 +37,10 @@ module ActiveRecord
 
         def collection
           # do this with a hash so that we don't cause the relation query to execute
-          kollektion.from_hash(values_hash)
+          c = kollektion.from_hash(values_hash)
+          # TODO do we even need to do from_hash here? can we just create a new from_relation method instead that re-uses the same relation if we're already loaded?
+          c.instance_variable_set(:@relation, self) if loaded?
+          c
         end
         alias_method :to_collection, :collection
       end
