@@ -14,26 +14,26 @@ module ActiveRecord
     class << self
       attr_reader :collections
       def inherited(subclass)
-        COLLECTIONS << subclass
+        ActiveRecord::Collection::COLLECTIONS << subclass
       end
 
       def collectable(klass=nil)
         unless klass.nil?
           raise ArgumentError, "The collection model must inherit from ActiveRecord::Base" unless klass.ancestors.include?(ActiveRecord::Base)
-          COLLECTABLES[name] ||= klass
+          ActiveRecord::Collection::COLLECTABLES[name] ||= klass
         end
 
-        if COLLECTABLES[name].nil?
+        if ActiveRecord::Collection::COLLECTABLES[name].nil?
           begin
             klass = self.name.demodulize.singularize.constantize
-            COLLECTABLES[name] = klass if !klass.nil? && klass.ancestors.include?(ActiveRecord::Base)
+            ActiveRecord::Collection::COLLECTABLES[name] = klass if !klass.nil? && klass.ancestors.include?(ActiveRecord::Base)
           rescue
             # singularized class doesn't exist
           end
         end
 
-        raise "Unable to determine a model to use for your collection, please set one with the `collectable` class method" if COLLECTABLES[name].nil? # TODO implement real exceptions
-        COLLECTABLES[name]
+        raise "Unable to determine a model to use for your collection, please set one with the `collectable` class method" if ActiveRecord::Collection::COLLECTABLES[name].nil? # TODO implement real exceptions
+        ActiveRecord::Collection::COLLECTABLES[name]
       end
       alias_method :model, :collectable
     end
