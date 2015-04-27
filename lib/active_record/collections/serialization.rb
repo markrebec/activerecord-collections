@@ -24,7 +24,13 @@ module ActiveRecord
           collection.includes!(*hash[:includes]) unless hash[:includes].empty?
 
           wheres = hash[:where].partition { |w| w.is_a?(Hash) }
-          wheres.first.each { |wh| collection.where!(wh) }
+          wheres.first.each do |wh|
+            if wh.keys.first == :not
+              collection.not!(wh[:not])
+            else
+              collection.where!(wh)
+            end
+          end
           collection.where!(*hash[:bind].map { |b| b[:value] }.unshift(wheres.last.join(" AND ").gsub(/\$\d/,'?'))) unless wheres.last.empty?
 
           collection.group!(hash[:group]) unless hash[:group].empty?

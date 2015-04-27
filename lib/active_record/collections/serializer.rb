@@ -123,6 +123,9 @@ module ActiveRecord
             serialize_node(node.expr)
           when Arel::Nodes::And
             node.children.map { |child| serialize_node(child) }
+          when Arel::Nodes::NotEqual
+            bound = bind.delete_at(bind.find_index { |b| b[:name] == node.left.name.to_s })[:value]
+            {not: {node.left.name.to_sym => bound}}
           when Arel::Nodes::Or
             {or: [serialize_node(node.left), serialize_node(node.right)]}
           else
