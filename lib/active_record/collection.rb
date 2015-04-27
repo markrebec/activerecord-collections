@@ -45,7 +45,11 @@ module ActiveRecord
       rescue
         parent = klass.ancestors[1]
         return nil if parent.name == 'ActiveRecord::Collection'
-        parent.try(:collectable) || infer_collectable(parent)
+        if ActiveRecord::Collection::COLLECTABLES.has_key?(parent.name)
+          ActiveRecord::Collection::COLLECTABLES[parent.name].constantize
+        else
+          infer_collectable(parent)
+        end
       end
     end
 
