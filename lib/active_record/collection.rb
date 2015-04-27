@@ -12,30 +12,41 @@ module ActiveRecord
     COLLECTIONS = []
 
     class << self
-      attr_reader :collections
       def inherited(subclass)
-        ActiveRecord::Collection::COLLECTIONS << subclass
+        ActiveRecord::Collection::COLLECTIONS << subclass.name unless ActiveRecord::Collection::COLLECTIONS.include?(subclass.name)
+        # if parent class is not Collection, register the collectable on the class as the closest parent's collectable
+      end
+
+      def collections
+        ActiveRecord::Collection::COLLECTIONS.map(&:constantize)
       end
 
       def collectable(klass=nil)
         unless klass.nil?
           raise ArgumentError, "The collection model must inherit from ActiveRecord::Base" unless klass.ancestors.include?(ActiveRecord::Base)
-          ActiveRecord::Collection::COLLECTABLES[name] ||= klass
+          ActiveRecord::Collection::COLLECTABLES[name] ||= klass.name
         end
 
         if ActiveRecord::Collection::COLLECTABLES[name].nil?
-          begin
-            klass = self.name.demodulize.singularize.constantize
-            ActiveRecord::Collection::COLLECTABLES[name] = klass if !klass.nil? && klass.ancestors.include?(ActiveRecord::Base)
-          rescue
-            # singularized class doesn't exist
-          end
+          klass = infer_collectable
+          ActiveRecord::Collection::COLLECTABLES[name] = klass.name if !klass.nil? && klass.ancestors.include?(ActiveRecord::Base)
         end
 
         raise "Unable to determine a model to use for your collection, please set one with the `collectable` class method" if ActiveRecord::Collection::COLLECTABLES[name].nil? # TODO implement real exceptions
-        ActiveRecord::Collection::COLLECTABLES[name]
+
+        ActiveRecord::Collection::COLLECTABLES[name].constantize
       end
       alias_method :model, :collectable
+
+      def infer_collectable(klass=self)
+        singular = klass.name.demodulize.singularize
+        raise "Cannot infer collectable from singular collection" if singular == klass.name.demodulize
+        singular.constantize
+      rescue
+        parent = klass.ancestors[1]
+        return nil if parent.name == 'ActiveRecord::Collection'
+        parent.try(:collectable) || infer_collectable(parent)
+      end
     end
 
     def collectable

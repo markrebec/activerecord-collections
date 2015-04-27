@@ -21,3 +21,20 @@ class StockedProducts < ActiveRecord::Collection
   default_batch_size 200
   batching_threshold 500
 end
+
+class StockedProductCollection < ActiveRecord::Collection
+  collectable StockedProduct
+end
+
+class ProductCollection < ActiveRecord::Collection
+  collectable Product
+end
+
+class AnotherProductCollection < ProductCollection
+end
+
+class Retailers < ActiveRecord::Collection
+end
+
+class MoreRetailers < Retailers
+end
