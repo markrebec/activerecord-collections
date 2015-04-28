@@ -14,47 +14,51 @@ module ActiveRecord
     class << self
       def inherited(subclass)
         ActiveRecord::Collection::COLLECTIONS << subclass.name unless ActiveRecord::Collection::COLLECTIONS.include?(subclass.name)
-        # if parent class is not Collection, register the collectable on the class as the closest parent's collectable
+        subclass.collectable rescue nil #noop
       end
 
       def collections
         ActiveRecord::Collection::COLLECTIONS.map(&:constantize)
       end
 
+      def kollektable
+        ActiveRecord::Collection::COLLECTABLES[name]
+      end
+
+      def collectable=(klass)
+        raise ArgumentError, "The collection model must inherit from ActiveRecord::Base" unless !klass.nil? && klass < ActiveRecord::Base
+        ActiveRecord::Collection::COLLECTABLES[name] = klass.name
+      end
+
       def collectable(klass=nil)
-        unless klass.nil?
-          raise ArgumentError, "The collection model must inherit from ActiveRecord::Base" unless klass.ancestors.include?(ActiveRecord::Base)
-          ActiveRecord::Collection::COLLECTABLES[name] ||= klass.name
+        if klass.nil?
+          self.collectable = infer_collectable if kollektable.nil?
+          raise "Unable to determine a model to use for your collection, please set one with the `collectable` class method" if kollektable.nil?
+        else
+          self.collectable = klass
         end
 
-        if ActiveRecord::Collection::COLLECTABLES[name].nil?
-          klass = infer_collectable
-          ActiveRecord::Collection::COLLECTABLES[name] = klass.name if !klass.nil? && klass.ancestors.include?(ActiveRecord::Base)
-        end
-
-        raise "Unable to determine a model to use for your collection, please set one with the `collectable` class method" if ActiveRecord::Collection::COLLECTABLES[name].nil? # TODO implement real exceptions
-
-        ActiveRecord::Collection::COLLECTABLES[name].constantize
+        kollektable.constantize
       end
       alias_method :model, :collectable
 
-      def infer_collectable(klass=self)
-        singular = klass.name.demodulize.singularize
-        raise "Cannot infer collectable from singular collection" if singular == klass.name.demodulize
+      def infer_collectable
+        singular = name.demodulize.singularize
+        raise "Cannot infer collectable name from collection name" if singular == name.demodulize
         singular.constantize
       rescue
-        parent = klass.ancestors[1]
-        return nil if parent.name == 'ActiveRecord::Collection'
-        if ActiveRecord::Collection::COLLECTABLES.has_key?(parent.name)
-          ActiveRecord::Collection::COLLECTABLES[parent.name].constantize
-        else
-          infer_collectable(parent)
+        parent = ancestors[1]
+        return nil unless parent < ActiveRecord::Collection
+        begin
+          parent.collectable
+        rescue
+          nil
         end
       end
     end
 
     def collectable
-      @collectable ||= self.class.collectable
+      @collectable# ||= self.class.collectable
     end
     alias_method :model, :collectable
 
@@ -75,6 +79,8 @@ module ActiveRecord
 
       if criteria.first.present? && criteria.first.respond_to?(:ancestors) && criteria.first < ActiveRecord::Base
         @collectable = criteria.slice!(0)
+      else
+        @collectable = self.class.collectable
       end
 
       plural_name = collectable.name.demodulize.pluralize.underscore
@@ -102,7 +108,7 @@ module ActiveRecord
     end
 
     def initialize_copy(old)
-      @collectable = old.collectable
+      @collectable = old.collectable.name.constantize
       @options = old.options.dup
       @records = @relation = old.relation.dup
       @total_count = old.instance_variable_get(:@total_count)
