@@ -13,32 +13,44 @@ module ActiveRecord
 
     class << self
       def inherited(subclass)
-        ActiveRecord::Collection::COLLECTIONS << subclass.name unless ActiveRecord::Collection::COLLECTIONS.include?(subclass.name)
-        subclass.collectable rescue nil #noop
+        subclass.register!
       end
 
       def collections
         ActiveRecord::Collection::COLLECTIONS.map(&:constantize)
       end
 
+      def register!
+        register_collection
+        register_collectable
+      end
+
+      def register_collection
+        ActiveRecord::Collection::COLLECTIONS << name unless ActiveRecord::Collection::COLLECTIONS.include?(name)
+      end
+
       def kollektable
-        ActiveRecord::Collection::COLLECTABLES[name]
+        ActiveRecord::Collection::COLLECTABLES[name].try(:constantize)
       end
 
       def collectable=(klass)
-        raise ArgumentError, "The collection model must inherit from ActiveRecord::Base" unless !klass.nil? && klass < ActiveRecord::Base
+        return if klass.nil?
+        raise ArgumentError, "The collection model must inherit from ActiveRecord::Base" unless klass < ActiveRecord::Base
         ActiveRecord::Collection::COLLECTABLES[name] = klass.name
       end
 
-      def collectable(klass=nil)
+      def register_collectable(klass=nil)
         if klass.nil?
           self.collectable = infer_collectable if kollektable.nil?
-          raise "Unable to determine a model to use for your collection, please set one with the `collectable` class method" if kollektable.nil?
         else
           self.collectable = klass
         end
+      end
 
-        kollektable.constantize
+      def collectable(klass=nil)
+        register_collectable(klass)
+        raise "Unable to determine a model to use for your collection, please set one with the `collectable` class method" if kollektable.nil?
+        kollektable
       end
       alias_method :model, :collectable
 
